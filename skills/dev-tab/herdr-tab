@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+# dev-tab: open a new herdr pane (right split), start cc, and feed it a prompt file.
+# Requires running inside a herdr-managed pane (HERDR_ENV=1).
+# Usage:
+#   herdr-tab [--no-bypass] [--model NAME] <prompt-file>
+#   echo "prompt text" | herdr-tab [--no-bypass] [--model NAME]
+
+set -euo pipefail
+
+# Must run inside herdr — herdr commands only work from a managed pane.
+if [[ "${HERDR_ENV:-}" != "1" ]]; then
+  echo "Error: dev-tab requires running inside a herdr pane (HERDR_ENV is not 1)." >&2
+  echo "       Launch this from a herdr-managed terminal, or use /dev or /dev-sa instead." >&2
+  exit 1
+fi
+
+PROMPT_FILE=""
+BYPASS=true
+CLEANUP=false
+MODEL=""
+
+usage() {
+  echo "Usage: herdr-tab [--no-bypass] [--model NAME] <prompt-file>" >&2
+  echo "       echo 'prompt' | herdr-tab [--no-bypass] [--model NAME]" >&2
+  exit 1
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --no-bypass) BYPASS=false; shift ;;
+    --bypass)    BYPASS=true;  shift ;;
+    --model)     [[ $# -lt 2 ]] && usage; MODEL="$2"; shift 2 ;;
+    -h|--help)   usage ;;
+    *)           PROMPT_FILE="$1"; shift ;;
+  esac
+done
+
+# Fall back to stdin if no file arg
+if [[ -z "$PROMPT_FILE" ]]; then
+  if [[ ! -t 0 ]]; then
+    PROMPT_FILE="$(mktemp /tmp/dev-tab-XXXXXX.md)"
+    cat - > "$PROMPT_FILE"
+    CLEANUP=true
+  else
+    usage
+  fi
+fi
+
+[[ ! -f "$PROMPT_FILE" ]] && { echo "Error: prompt file not found: $PROMPT_FILE" >&2; exit 1; }
+PROMPT_FILE="$(realpath "$PROMPT_FILE")"
+
+# Resolve the pane to split from. herdr injects HERDR_PANE_ID into every managed
+# pane; fall back to the focused pane reported by `herdr pane list`.
+CUR_PANE="${HERDR_PANE_ID:-}"
+if [[ -z "$CUR_PANE" ]]; then
+  CUR_PANE=$(herdr pane list 2>/dev/null | jq -r 'first(.. | objects | select(.focused == true) | .pane_id) // empty')
+fi
+[[ -z "$CUR_PANE" ]] && { echo "Error: could not determine current herdr pane (HERDR_PANE_ID unset and no focused pane)." >&2; exit 1; }
+
+# Open a new pane to the right. Omitting --no-focus lands the user in the new session.
+RESULT=$(herdr pane split "$CUR_PANE" --direction right 2>&1) \
+  || { echo "herdr pane split failed: $RESULT" >&2; exit 1; }
+NEW_PANE=$(echo "$RESULT" | jq -r '.result.pane.pane_id // empty')
+[[ -z "$NEW_PANE" ]] && { echo "Error: could not parse pane id from: $RESULT" >&2; exit 1; }
+
+# Build and send command
+MODEL_ARG=""
+[[ -n "$MODEL" ]] && MODEL_ARG=" --model \"$MODEL\""
+if $BYPASS; then
+  CMD="claude --verbose${MODEL_ARG} --dangerously-skip-permissions < \"$PROMPT_FILE\""
+else
+  CMD="claude --verbose${MODEL_ARG} < \"$PROMPT_FILE\""
+fi
+
+# `pane run` sends the command text and a real Enter key in one request.
+herdr pane run "$NEW_PANE" "$CMD"
+
+# Auto-accept the bypass permissions dialog when in bypass mode.
+# Wait for the dialog to appear rather than sleeping blindly; skip cleanly if it never shows.
+if $BYPASS; then
+  if herdr wait output "$NEW_PANE" --match "Bypass Permissions" --timeout 5000 >/dev/null 2>&1; then
+    herdr pane run "$NEW_PANE" "2"
+  fi
+fi
+
+echo "dev-tab: cc started on $NEW_PANE"
+echo "Prompt:  $PROMPT_FILE"
+
+# Clean up temp files after cc has had time to read them
+if $CLEANUP; then
+  (sleep 15 && rm -f "$PROMPT_FILE") &
+fi
