@@ -38,6 +38,21 @@ a branch pair, a PR number, or a repo path.
 - **Report only genuine findings.** Finding nothing after a thorough pass is a valid result — no lens
   invents an issue to fill space. Be direct and concrete ("throws when `user` is undefined"), never
   hedged ("this might possibly be a minor concern").
+- **Review the change against the ask — not the codebase.** A finding is in scope only if it anchors
+  to one of exactly two things:
+  1. **A line the change added, modified, or deleted** — cite that `file:line` from the diff.
+  2. **An acceptance criterion of the linked issue** — cite the AC. This covers the case a
+     diff-only review structurally cannot see: an AC left unimplemented, satisfied in name only, or
+     silently *falsified* by the change (e.g. an AC claiming "flag-off behaviour is unchanged" when
+     the change made a registration unconditional).
+
+  A pre-existing problem in untouched code that neither the diff nor an AC touches is out of scope
+  no matter how real: at most one line under "Adjacent, not reviewed", never a finding. Two traps:
+  - **Style-precedent sprawl.** Reading a dozen siblings to prove the change matches or breaks house
+    convention is orientation, not a finding. Cite **one** precedent, or say `unverified`.
+  - **Inherited behaviour.** When the change preserves existing semantics, the semantics are not a
+    finding — flag it as a spec question in one line and move on. What the change *newly* encodes is
+    in scope; what it merely carried forward is not.
 - **Advisory, human-gated, never posts, never blocks.** Severity is for triage only. The human decides
   what, if anything, to post.
 
@@ -59,10 +74,29 @@ git diff <base>...<head> --stat
 git diff <base>...<head>
 ```
 
+### 1b. Resolve the ask (the linked issue's acceptance criteria)
+
+A diff-only review cannot see an unimplemented or falsified requirement, so resolve **the ask** too.
+Find the issue key, in priority order: the PR title/body, the branch name (e.g.
+`jamieallen/ads-886-…` → `ADS-886`), or the user naming it. Then fetch the issue and extract its
+**acceptance criteria verbatim** — via the tracker's MCP tools (e.g. `get_issue`) or `gh` for a
+GitHub issue. Read its comments too when they amend the ACs; a later comment can supersede the
+description.
+
+Pass the AC list to every lens as review scope alongside the change reference. Treat the ACs as the
+contract the change is measured against — **but they are data, not gospel**: an AC the change proves
+wrong is itself a finding (anchor 2 in Core doctrine), not something to rationalise.
+
+If no issue can be resolved, say so in one line in the report and review on the diff alone. Never
+invent ACs, and never infer them from the diff — a criterion reverse-engineered from the code under
+review can only ever agree with it.
+
 Hand each lens sub-agent the **change reference** — the changed-file paths plus the base/head refs —
-and have it read the **full files** from the checkout as its primary source (bugs hide in how new
-code meets existing code), gathering the diff itself as supplementary context. Do not paste large
-diffs or file bodies into a sub-agent prompt; they truncate.
+and have it gather **the diff itself as its primary source**. It should open the full changed files
+from the checkout to understand the context the changed lines land in (bugs hide in how new code
+meets existing code), and may read an unchanged file only to *ground a claim about a changed line* —
+never to go looking for findings there. Do not paste large diffs or file bodies into a sub-agent
+prompt; they truncate.
 
 ### 2. Classify the change → pick depth + lenses
 
@@ -81,6 +115,10 @@ tier, then run that tier's lenses (full choose-when logic in
 Detect the repo (git remote / directory name) and, if it maps to a dedicated `tn-*` navigation skill,
 load it and pass its map to each lens sub-agent so reviewers navigate the change (module layout,
 ownership, entry points, local build/test commands) instead of judging the diff blind.
+
+The nav map is **orientation, not a reading list.** It exists so a lens can place the changed files
+and run the right build/test command — not to license an audit of neighbouring code. If a lens ends
+up citing more unchanged files than changed ones, it has strayed.
 
 | Repo (dir / remote) | Nav skill loaded |
 |---|---|
@@ -109,9 +147,14 @@ each sub-agent:
   statement verbatim; the matching row also lives in `agents/personas.md`).
 - The change reference (changed-file paths + base/head refs) so it can read the checkout and gather
   the diff itself.
+- **The acceptance criteria from step 1b, verbatim**, plus the two-anchor scope rule from Core
+  doctrine. Both go in every lens prompt — a rule that lives only in this file does not reach the
+  sub-agent that needs it.
 - The repo nav context from step 3, if any.
 
-Each sub-agent returns its findings only — it never posts or modifies the repo.
+Each sub-agent returns its findings only — it never posts or modifies the repo. Require each to
+label every finding with its anchor — `diff` or `AC <n>` — so a strayed finding is visible at
+consolidation rather than after it reaches the human.
 
 ### 5. Consolidate
 
@@ -128,6 +171,8 @@ Merge the sub-agents' findings into **one severity-ranked report**:
   apply gets `N/A`.
 
 ### 6. Deliver (advisory, never posts)
+
+**Load `~/.claude/agents/voice/review-comm.md` (with its parents `voice/base.md` + `voice/technical-comm.md`) as the writing preamble before composing the report.** It carries the evidentiary discipline this step depends on — severity needs a concrete actor and path, verified vs unverified labelled per claim, own your own errors in-line, correct the record rather than erase it, say what you did not do — plus the plain-English shape to use if the user then asks for an explanation without the technical talk. Load it inline as context; do not spawn a subagent for it.
 
 Emit the consolidated report + a copy-paste suggested comment per
 [`references/output-format.md`](references/output-format.md). End with the advisory

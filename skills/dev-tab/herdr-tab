@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
-# dev-tab: open a new herdr pane (right split), start cc, and feed it a prompt file.
+# dev-tab: open a new herdr pane, start cc, and feed it a prompt file.
 # Requires running inside a herdr-managed pane (HERDR_ENV=1).
 # Usage:
-#   herdr-tab [--no-bypass] [--model NAME] <prompt-file>
-#   echo "prompt text" | herdr-tab [--no-bypass] [--model NAME]
+#   herdr-tab [--no-bypass] [--model NAME] [--pane ID] [--direction DIR] <prompt-file>
+#   echo "prompt text" | herdr-tab [--no-bypass] [--model NAME] [--pane ID] [--direction DIR]
+#
+# --pane      split from this pane instead of the current one (e.g. w1:p1F)
+# --direction right (default) | down | left | up
 
 set -euo pipefail
 
@@ -18,10 +21,13 @@ PROMPT_FILE=""
 BYPASS=true
 CLEANUP=false
 MODEL=""
+TARGET_PANE=""
+DIRECTION="right"
 
 usage() {
-  echo "Usage: herdr-tab [--no-bypass] [--model NAME] <prompt-file>" >&2
-  echo "       echo 'prompt' | herdr-tab [--no-bypass] [--model NAME]" >&2
+  echo "Usage: herdr-tab [--no-bypass] [--model NAME] [--pane ID] [--direction DIR] <prompt-file>" >&2
+  echo "       echo 'prompt' | herdr-tab [--no-bypass] [--model NAME] [--pane ID] [--direction DIR]" >&2
+  echo "       --direction: right (default) | down | left | up" >&2
   exit 1
 }
 
@@ -30,10 +36,17 @@ while [[ $# -gt 0 ]]; do
     --no-bypass) BYPASS=false; shift ;;
     --bypass)    BYPASS=true;  shift ;;
     --model)     [[ $# -lt 2 ]] && usage; MODEL="$2"; shift 2 ;;
+    --pane)      [[ $# -lt 2 ]] && usage; TARGET_PANE="$2"; shift 2 ;;
+    --direction) [[ $# -lt 2 ]] && usage; DIRECTION="$2"; shift 2 ;;
     -h|--help)   usage ;;
     *)           PROMPT_FILE="$1"; shift ;;
   esac
 done
+
+case "$DIRECTION" in
+  right|down|left|up) ;;
+  *) echo "Error: --direction must be one of: right, down, left, up (got '$DIRECTION')" >&2; exit 1 ;;
+esac
 
 # Fall back to stdin if no file arg
 if [[ -z "$PROMPT_FILE" ]]; then
@@ -49,16 +62,27 @@ fi
 [[ ! -f "$PROMPT_FILE" ]] && { echo "Error: prompt file not found: $PROMPT_FILE" >&2; exit 1; }
 PROMPT_FILE="$(realpath "$PROMPT_FILE")"
 
-# Resolve the pane to split from. herdr injects HERDR_PANE_ID into every managed
-# pane; fall back to the focused pane reported by `herdr pane list`.
-CUR_PANE="${HERDR_PANE_ID:-}"
+# Resolve the pane to split from. An explicit --pane wins; otherwise herdr injects
+# HERDR_PANE_ID into every managed pane; fall back to the focused pane from `herdr pane list`.
+CUR_PANE="$TARGET_PANE"
+if [[ -z "$CUR_PANE" ]]; then
+  CUR_PANE="${HERDR_PANE_ID:-}"
+fi
 if [[ -z "$CUR_PANE" ]]; then
   CUR_PANE=$(herdr pane list 2>/dev/null | jq -r 'first(.. | objects | select(.focused == true) | .pane_id) // empty')
 fi
 [[ -z "$CUR_PANE" ]] && { echo "Error: could not determine current herdr pane (HERDR_PANE_ID unset and no focused pane)." >&2; exit 1; }
 
-# Open a new pane to the right. Omitting --no-focus lands the user in the new session.
-RESULT=$(herdr pane split "$CUR_PANE" --direction right 2>&1) \
+# Verify an explicitly-named pane exists, so a typo fails here instead of splitting
+# the wrong pane or erroring out with an opaque herdr message.
+if [[ -n "$TARGET_PANE" ]]; then
+  herdr pane list 2>/dev/null | jq -e --arg p "$TARGET_PANE" \
+    'any(.. | objects | select(.pane_id? == $p); true)' >/dev/null \
+    || { echo "Error: pane '$TARGET_PANE' not found. Run 'herdr pane list' to see live panes." >&2; exit 1; }
+fi
+
+# Open the new pane. Omitting --no-focus lands the user in the new session.
+RESULT=$(herdr pane split "$CUR_PANE" --direction "$DIRECTION" 2>&1) \
   || { echo "herdr pane split failed: $RESULT" >&2; exit 1; }
 NEW_PANE=$(echo "$RESULT" | jq -r '.result.pane.pane_id // empty')
 [[ -z "$NEW_PANE" ]] && { echo "Error: could not parse pane id from: $RESULT" >&2; exit 1; }
