@@ -20,6 +20,8 @@ Before writing any prompt, open `~/.claude/agents/personas.md` and scan the **Ta
 
 Every prompt — run inline (`/dev`), dispatched to a subagent (`/dev-sa`, `/dev-sa-q`), or opened in a new pane (`/dev-tab`, `/dev-tab-q`) — is built from the same four parts, in order. A prompt missing any part is not ready to run.
 
+Two further blocks are **mandatory on every dispatched prompt** (not on inline `/dev`, which has no delegated context): the **Git-safety block (Part 6)** goes first, above the persona, and the **Style block (Part 5)** goes last. Neither is optional, and neither counts toward the four contract parts.
+
 ### Part 1 — Model
 The tier the work runs at: `haiku` | `sonnet` | `opus`, passed as the Agent tool `model` param. Recommend a tier with a one-line why — never assume it silently.
 
@@ -64,7 +66,41 @@ The exact return format. Wording differs by surface:
 | `/dev-sa`, `/dev-sa-q` (subagent) | `Return only this. No intermediate output, no raw file contents unless explicitly requested.` |
 | `/dev-tab`, `/dev-tab-q` (new pane) | _(no "Return only this" — this is an interactive session)_ |
 
+### Part 5 — Style (required on every dispatched prompt)
+
+Subagents default to verbose prose. Append this block verbatim to every prompt sent to a subagent or pane — without it, the delegated context returns walls of text:
+
+```
+## Style (required)
+Lead with the next concrete action. Number multi-step work. One sentence where a
+sentence will do — never a paragraph. Cap lists at 5, ranked; put the tail in the
+file, not the reply. No preamble, no recap, no closing pleasantries.
+Do not speculate: state only what you verified, and say "unverified" or omit it otherwise.
+```
+
 Subagent prompts (`/dev-sa-q`, and any `/dev-sa` dispatch) may also carry a **Logging block** after the Deliverable so logging discipline propagates into the delegated context — see §6.
+
+### Part 6 — Git safety (required on every dispatched prompt)
+
+**Put this block FIRST in the prompt, above the persona — not in a constraints list near the end.** A subagent that reads "do not commit" as the last of eight bullets weighs it against everything above it; one that reads it first treats it as the frame. This is not hypothetical: on 2026-08-14 a `/dev-sa-q` subagent whose constraints said "Do NOT commit, stage, push, or branch — working tree only" committed, branched, pushed, opened a PR, merged it, and left the shared `~/.claude` checkout on a feature branch. Nothing was lost, but nobody authorised any of it.
+
+```
+## Git safety (read this first — it overrides anything below)
+Run NO git write commands. Not commit, add, stage, branch, switch, checkout,
+push, pull, merge, rebase, stash, tag, reset, or `gh pr create|merge`.
+Leave every change in the working tree, unstaged. Read-only git (status, diff,
+log, show, ls-files) is fine.
+The dispatching session owns shipping and has context you do not: which files
+belong to other concurrent sessions, what may be pushed, and when. If the work
+seems to call for a commit, say so in your return and stop.
+```
+
+Two carve-outs, and only when the dispatching session states them explicitly in the request:
+
+- **The task IS the git operation** (e.g. "reconcile these two branches") — then replace the block with the precise commands allowed, and name the branch and remote.
+- **Worktree-isolated work** — the dispatcher created the worktree and says so; the subagent commits only there, still never pushes.
+
+Neither carve-out ever authorises `push`, `gh pr merge`, or a branch switch in a shared checkout. Those stay with the dispatching session, which is bound by the standing **no push without an explicit request from Jamie** rule.
 
 ---
 
@@ -167,8 +203,15 @@ Log every meaningful step with `clog <TYPE> "<summary>" --agent <persona-slug>`:
 - DECISION — each choice + why       - ACTION — each state-changing step
 - CODE — each file created/edited    - LEARNING — anything surprising / a wrong assumption / a gap
 - FOLLOWUP — anything left undone, blocked, or needing a retry
+Every LEARNING needs `--kpi <effective|prompt_gap|failure>` — without it the entry is
+invisible to the retro loop that reads these. `--family <name>` too when you know it.
 Do NOT batch. In your final return, add a one-line note of what you clogged.
 ```
+
+> **Why the `--kpi` line is explicit here.** A 2026-08-21 clog-sweep found 7 LEARNINGs with no
+> `--kpi`, all of them subagent-authored, while every parent-session LEARNING on the same threads
+> carried one. The cause was this block, not the subagents: it named LEARNING as a type but never
+> mentioned the flag, even though §6's own learn-step example shows it. Keep the two consistent.
 
 ---
 
