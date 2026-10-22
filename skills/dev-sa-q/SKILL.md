@@ -38,7 +38,7 @@ It contains: persona lookup (§1), the 4-part prompt contract — model → pers
 
 ## Step 2: write — Assemble the 4-part prompt and dispatch
 
-1. **Build the contract** (SHARED.md §2): pick the model tier (recommend + one-line why), copy the persona **verbatim** from `~/.claude/agents/personas.md` (§1; derive-and-add a row if none fits), write the scoped request with all context, and state the deliverable — end subagent prompts with `Return only this. No intermediate output.`
+1. **Build the contract** (SHARED.md §2): pick the model tier (recommend + one-line why), copy the persona **verbatim** from `persona find` (§1; derive-and-add a row if none fits), write the scoped request with all context, and state the deliverable — end subagent prompts with `Return only this. No intermediate output.`
 
 2. **Ask only on a real gap** (SHARED.md §4). If scope / deliverable / depth is genuinely open, ask once via the `AskUserQuestion` tool. If the request already answers them, don't — there is **no** mandatory clarifying round and **no** show-and-approve gate. Draft and go.
 
@@ -90,7 +90,7 @@ It contains: persona lookup (§1), the 4-part prompt contract — model → pers
 - **Ask only on real gaps** — no mandatory clarifying round, no recommend-and-confirm model ceremony, no show-before-fire gate. Recommend the tier with a one-line why and proceed; ask via `AskUserQuestion` only when a gap would change the prompt.
 - **No review pass** — `/dev-sa-q` runs write → learn. Want `/pr-review` on the change? use `/dev-sa`.
 - **Foreground by default** — `run_in_background:false`, so `/dev-sa-q` returns the result in-line.
-- **Personas come from `~/.claude/agents/personas.md`** — verbatim, or derive-and-add a new row.
+- **Personas come from `persona find`** (SHARED.md §1) — verbatim, or derive and `persona add` a new row.
 - **Log both layers** — `/dev-sa-q` clogs its dispatch, completion, and learn; and carries the Logging block into the subagent when the delegated work is itself log-worthy. Neither layer batches or skips.
 
 ## Signal Keywords

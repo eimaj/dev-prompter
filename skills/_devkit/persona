@@ -1,0 +1,155 @@
+#!/usr/bin/env python3
+"""persona: look up, add, and lint rows in the Task Personas table.
+
+Reads ${PERSONAS_FILE:-$HOME/.claude/agents/personas.md}.
+
+Usage:
+  persona find <keyword> [keyword ...]   print up to 5 matching rows as Name<TAB>statement
+  persona add <name> <statement> <typical output>
+                                          insert a row at the end of the Task Personas table
+  persona lint                            report table rows that sit outside a table
+
+find and lint never write. find exits 1 when nothing matches; lint exits 1 on findings.
+"""
+
+import os
+import re
+import sys
+
+SECTION = "## Task Personas"
+MAX_RESULTS = 5
+STOPWORDS = {
+    "a", "an", "and", "are", "for", "in", "is", "job", "of", "on", "only",
+    "or", "the", "to", "with", "you", "your",
+}
+SEPARATOR = re.compile(r"^\|\s*:?-{3,}")
+
+
+def personas_path():
+    return os.environ.get("PERSONAS_FILE") or os.path.expanduser("~/.claude/agents/personas.md")
+
+
+def read_lines(path):
+    try:
+        with open(path, encoding="utf-8") as f:
+            return f.read().splitlines()
+    except OSError as e:
+        sys.exit(f"persona: cannot read {path}: {e.strerror}")
+
+
+def split_row(line):
+    cells = re.split(r"(?<!\\)\|", line.strip())
+    return [c.strip() for c in cells[1:-1]]
+
+
+def is_row(line):
+    return line.lstrip().startswith("|")
+
+
+def task_rows(lines):
+    """Return (index, cells) for each data row of the Task Personas table.
+
+    The table is the first run of contiguous '|' lines after the section heading.
+    """
+    try:
+        start = next(i for i, l in enumerate(lines) if l.strip() == SECTION)
+    except StopIteration:
+        sys.exit(f"persona: no '{SECTION}' heading in {personas_path()}")
+    rows = []
+    i = start + 1
+    while i < len(lines) and not is_row(lines[i]):
+        if lines[i].startswith("## "):
+            return rows
+        i += 1
+    while i < len(lines) and is_row(lines[i]):
+        if not SEPARATOR.match(lines[i].strip()):
+            rows.append((i, split_row(lines[i])))
+        i += 1
+    return rows[1:]  # drop the header row
+
+
+def cmd_find(args):
+    keywords = [k.lower() for a in args for k in re.split(r"\W+", a) if k]
+    keywords = [k for k in keywords if k not in STOPWORDS and len(k) > 1]
+    if not keywords:
+        sys.exit("persona find: give at least one keyword")
+    scored = []
+    for order, (_, cells) in enumerate(task_rows(read_lines(personas_path()))):
+        if len(cells) < 2:
+            continue
+        name, statement = cells[0], cells[1]
+        name_l, stmt_l = name.lower(), statement.lower()
+        score = sum(2 * (k in name_l) + (k in stmt_l) for k in keywords)
+        if score:
+            scored.append((-score, order, name, statement))
+    if not scored:
+        print("persona find: no match", file=sys.stderr)
+        return 1
+    for _, _, name, statement in sorted(scored)[:MAX_RESULTS]:
+        print(f"{name}\t{statement}")
+    return 0
+
+
+def cmd_add(args):
+    if len(args) != 3:
+        sys.exit("persona add: need <name> <statement> <typical output>")
+    name, statement, output = (a.strip().replace("|", "\\|") for a in args)
+    if "Your only job is" not in statement:
+        sys.exit("persona add: statement must follow '[role]. Your only job is [task].'")
+    path = personas_path()
+    lines = read_lines(path)
+    rows = task_rows(lines)
+    if not rows:
+        sys.exit("persona add: Task Personas table has no rows to append after")
+    if any(c and c[0].lower() == name.lower() for _, c in rows):
+        sys.exit(f"persona add: '{name}' already exists")
+    lines.insert(rows[-1][0] + 1, f"| {name} | {statement} | {output} |")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+    print(f"persona add: added '{name}' to {path}")
+    return 0
+
+
+def cmd_lint(_args):
+    path = personas_path()
+    lines = read_lines(path)
+    findings = []
+    i = 0
+    while i < len(lines):
+        if not is_row(lines[i]):
+            i += 1
+            continue
+        start = i
+        while i < len(lines) and is_row(lines[i]):
+            i += 1
+        block = lines[start:i]
+        if len(block) < 2 or not SEPARATOR.match(block[1].strip()):
+            for n in range(start, i):
+                name = (split_row(lines[n]) or ["?"])[0]
+                findings.append(f"{path}:{n + 1}: row outside a table: {name}")
+    seen = {}
+    for idx, cells in task_rows(lines):
+        if len(cells) != 3:
+            findings.append(f"{path}:{idx + 1}: expected 3 columns, found {len(cells)}")
+        key = cells[0].lower() if cells else ""
+        if key in seen:
+            findings.append(f"{path}:{idx + 1}: duplicate name '{cells[0]}' (first at line {seen[key]})")
+        seen.setdefault(key, idx + 1)
+    for f in findings:
+        print(f)
+    if findings:
+        return 1
+    print(f"persona lint: ok ({len(task_rows(lines))} task personas)")
+    return 0
+
+
+def main(argv):
+    commands = {"find": cmd_find, "add": cmd_add, "lint": cmd_lint}
+    if len(argv) < 2 or argv[1] not in commands:
+        sys.stderr.write(__doc__)
+        return 2
+    return commands[argv[1]](argv[2:])
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

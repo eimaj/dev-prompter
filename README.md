@@ -110,6 +110,7 @@ step — skips `/pr-review` entirely.
 ```
 dev-prompter/
   skills/_devkit/SHARED.md   shared base: personas, 4-part contract, cycles, routing
+  skills/_devkit/persona     persona lookup: find / add / lint over the Task Personas table
   skills/dev/                inline surface
   skills/dev-tab/            herdr pane surface (+ herdr-tab launcher script)
   skills/dev-sa/             subagent surface, reviewed

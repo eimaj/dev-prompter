@@ -6,13 +6,12 @@ It does **not** contain execution mechanics — those live in each thin SKILL.md
 
 ---
 
-## 1. Check the Task Personas Table
+## 1. Look Up the Persona
 
-Before writing any prompt, open `~/.claude/agents/personas.md` and scan the **Task Personas** table.
+Before writing any prompt, run `~/.claude/skills/_devkit/persona find <2-4 task keywords>`. It prints up to 5 `Name<TAB>statement` rows from the Task Personas table in `~/.claude/agents/personas.md`; do not read that file directly.
 
-- If a row matches the ask, copy the **Persona statement** column verbatim — do not paraphrase.
-- If no row matches, derive one: `[role] + "Your only job is" + [task]`.
-  - Add the new row to the table and commit: `chore(personas): add <name> task persona`.
+- If a row matches the ask, copy its statement verbatim — do not paraphrase.
+- If none fits (exit 1, or no row matches), derive one: `You are a <role>. Your only job is <task>.` Record it with `~/.claude/skills/_devkit/persona add "<Name>" "<statement>" "<typical output>"`, which inserts the row inside the table. Leave committing to the user.
 
 ---
 
