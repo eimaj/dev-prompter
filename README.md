@@ -80,7 +80,7 @@ and is not loaded at run time.
 - **The Logging block names `--kpi`.** A 2026-08-21 clog-sweep found 7 LEARNINGs with no
   `--kpi`, all subagent-authored, while every parent-session LEARNING on the same threads
   carried one. The block named LEARNING as a type but never mentioned the flag. Keep the
-  block and the learn-step example in `SHARED.md` consistent.
+  Logging block in `dispatch.md` and the learn-step example in `SHARED.md` consistent.
 
 ## Install
 

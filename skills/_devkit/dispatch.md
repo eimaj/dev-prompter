@@ -53,7 +53,7 @@ Do not speculate: state only what you verified, and say "unverified" or omit it 
 
 ## 3. Logging block
 
-When a subagent's or pane's work is itself log-worthy, put this after the Deliverable so the delegated context logs as it works. Keep the `--kpi` line: a LEARNING without it is invisible to the retro loop.
+When a subagent's or pane's work is itself log-worthy, put this after the Deliverable so the delegated context logs as it works.
 
 ```
 ## Logging (required — log in real time, not batched at the end)
