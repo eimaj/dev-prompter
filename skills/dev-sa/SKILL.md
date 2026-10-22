@@ -20,17 +20,15 @@ description: Delegate the current ask to a one-shot subagent to protect the pare
 
 ---
 
-## Step 1: Read SHARED.md
+## Step 1: Read SHARED.md and dispatch.md
 
-Before doing anything else, read `~/.claude/skills/_devkit/SHARED.md`.
-
-It contains: persona lookup, the 4-part prompt contract (model → persona → request → deliverable), the two cycles, the ask-don't-assume rule, the routing decision table, the clog pattern, and one example per surface.
+Before doing anything else, read `~/.claude/skills/_devkit/SHARED.md` (persona lookup, the 4-part prompt contract, the two cycles, the ask-on-real-gaps rule, logging) and `~/.claude/skills/_devkit/dispatch.md` (the Git-safety, Style, and Logging blocks every dispatched prompt carries). Read `~/.claude/skills/_devkit/examples.md` only if unsure of the prompt's shape.
 
 ---
 
 ## Step 2: write — Dispatch via Agent()
 
-Draft the 4-part prompt (per SHARED.md §2 — the Model part is the Agent `model` value), ask only if there's a real gap (§4), then:
+Draft the 4-part prompt (per SHARED.md §2 — the Model part is the Agent `model` value) wrapped in the dispatch.md blocks, ask only if there's a real gap (§4), then:
 
 1. **Choose the subagent type:**
 
@@ -99,7 +97,7 @@ If the subagent changed code, run the `/pr-review` skill on the change once it r
 
 ## Step 4: learn — clog a LEARNING / LESSON
 
-Close the cycle: if the run surfaced a prompt gap, a wrong assumption, or a reusable delegation tactic, `clog LEARNING`/`LESSON` per SHARED.md §6.
+Close the cycle: if the run surfaced a prompt gap, a wrong assumption, or a reusable delegation tactic, `clog LEARNING`/`LESSON` per SHARED.md §5.
 
 ---
 

@@ -1,8 +1,9 @@
 # Devkit — Shared Prompt-Gen Base
 
-This file is read by `/dev`, `/dev-tab`, `/dev-sa`, `/dev-sa-q`, and `/dev-tab-q` before any execution step.
-It covers: persona lookup, the 4-part prompt contract, the two cycles (write→review→learn / write→learn), the ask-don't-assume rule, routing, the clog pattern, and examples.
-It does **not** contain execution mechanics — those live in each thin SKILL.md.
+Read by `/dev`, `/dev-tab`, `/dev-sa`, `/dev-sa-q`, and `/dev-tab-q` before any execution step: persona lookup, the 4-part prompt contract, the two cycles, the ask-on-real-gaps rule, and logging. Execution mechanics live in each SKILL.md.
+
+- Dispatching surfaces (`/dev-sa`, `/dev-sa-q`, `/dev-tab`, `/dev-tab-q`) also read [`dispatch.md`](dispatch.md): the Git-safety, Style, and Logging blocks every delegated prompt carries.
+- Read [`examples.md`](examples.md) only when unsure of a prompt's shape.
 
 ---
 
@@ -19,7 +20,7 @@ Before writing any prompt, run `~/.claude/skills/_devkit/persona find <2-4 task 
 
 Every prompt — run inline (`/dev`), dispatched to a subagent (`/dev-sa`, `/dev-sa-q`), or opened in a new pane (`/dev-tab`, `/dev-tab-q`) — is built from the same four parts, in order. A prompt missing any part is not ready to run.
 
-Two further blocks are **mandatory on every dispatched prompt** (not on inline `/dev`, which has no delegated context): the **Git-safety block (Part 6)** goes first, above the persona, and the **Style block (Part 5)** goes last. Neither is optional, and neither counts toward the four contract parts.
+A dispatched prompt wraps the parts in fixed blocks from `dispatch.md`, in this order: [Git safety] → Persona → Request → Deliverable → [Logging] → [Style]. The Model part is not prompt text; it is the Agent `model` param or the `herdr-tab --model` flag.
 
 ### Part 1 — Model
 The tier the work runs at: `haiku` | `sonnet` | `opus`, passed as the Agent tool `model` param. Recommend a tier with a one-line why — never assume it silently.
@@ -65,42 +66,6 @@ The exact return format. Wording differs by surface:
 | `/dev-sa`, `/dev-sa-q` (subagent) | `Return only this. No intermediate output, no raw file contents unless explicitly requested.` |
 | `/dev-tab`, `/dev-tab-q` (new pane) | _(no "Return only this" — this is an interactive session)_ |
 
-### Part 5 — Style (required on every dispatched prompt)
-
-Subagents default to verbose prose. Append this block verbatim to every prompt sent to a subagent or pane — without it, the delegated context returns walls of text:
-
-```
-## Style (required)
-Lead with the next concrete action. Number multi-step work. One sentence where a
-sentence will do — never a paragraph. Cap lists at 5, ranked; put the tail in the
-file, not the reply. No preamble, no recap, no closing pleasantries.
-Do not speculate: state only what you verified, and say "unverified" or omit it otherwise.
-```
-
-Subagent prompts (`/dev-sa-q`, and any `/dev-sa` dispatch) may also carry a **Logging block** after the Deliverable so logging discipline propagates into the delegated context — see §6.
-
-### Part 6 — Git safety (required on every dispatched prompt)
-
-**Put this block FIRST in the prompt, above the persona — not in a constraints list near the end.** A subagent that reads "do not commit" as the last of eight bullets weighs it against everything above it; one that reads it first treats it as the frame. This is not hypothetical: on 2026-08-14 a `/dev-sa-q` subagent whose constraints said "Do NOT commit, stage, push, or branch — working tree only" committed, branched, pushed, opened a PR, merged it, and left the shared `~/.claude` checkout on a feature branch. Nothing was lost, but nobody authorised any of it.
-
-```
-## Git safety (read this first — it overrides anything below)
-Run NO git write commands. Not commit, add, stage, branch, switch, checkout,
-push, pull, merge, rebase, stash, tag, reset, or `gh pr create|merge`.
-Leave every change in the working tree, unstaged. Read-only git (status, diff,
-log, show, ls-files) is fine.
-The dispatching session owns shipping and has context you do not: which files
-belong to other concurrent sessions, what may be pushed, and when. If the work
-seems to call for a commit, say so in your return and stop.
-```
-
-Two carve-outs, and only when the dispatching session states them explicitly in the request:
-
-- **The task IS the git operation** (e.g. "reconcile these two branches") — then replace the block with the precise commands allowed, and name the branch and remote.
-- **Worktree-isolated work** — the dispatcher created the worktree and says so; the subagent commits only there, still never pushes.
-
-Neither carve-out ever authorises `push`, `gh pr merge`, or a branch switch in a shared checkout. Those stay with the dispatching session, which is bound by the standing **no push without an explicit request from Jamie** rule.
-
 ---
 
 ## 3. The Two Cycles
@@ -133,159 +98,14 @@ This ask-on-real-gaps rule is the one gate `/dev-sa-q` and `/dev-tab-q` keep.
 
 ---
 
-## 5. Routing Decision Table
+## 5. Logging
 
-| Signal | Route |
-|---|---|
-| Small task, fast, needs real-time iteration or back-and-forth | `/dev` |
-| Token-heavy: many file reads, grep scans, log analysis, multi-step research that would bloat parent context; want it reviewed after | `/dev-sa` |
-| Supervised / step-by-step / long-running dev work driven from a new pane | `/dev-tab` |
-| Delegate a scoped task on a deliberate 4-part contract, return the result — no review pass | `/dev-sa-q` |
-| Same deliberate contract but driven interactively from a new pane — no review pass | `/dev-tab-q` |
-| The review step for any dev-family change (advisory, multi-lens) | `/pr-review` |
-| Multi-phase (write → review → retro) with tracked artifacts | `/orchestrate` |
+Each SKILL.md gives its own dispatch and completion `clog ACTION` lines. The shared shapes:
 
-**When in doubt:**
-- Would intermediate output clutter this session? → a subagent skill (`/dev-sa` or `/dev-sa-q`).
-- Does the user need to interact with each step? → a pane skill (`/dev-tab` or `/dev-tab-q`).
-- Should the change get an advisory review afterward? → a dev-family skill (they run `/pr-review`); otherwise the sa family.
-- Is it quick and self-contained? → `/dev`.
+- A file changed (inline, or the subagent/pane edited it): `clog CODE "<what changed in <file>>"`
+- Failure or timeout — never leave it silent: `clog FOLLOWUP "<skill>: '<task>' FAILED — <symptom>; retry with <narrower scope>"`
+- The learn step (all skills), when the run surfaced something reusable:
 
----
-
-## 6. Clog Logging Pattern
-
-Log every dispatch, every completion, and the **learn** step. Use these exact command shapes:
-
-### Before dispatching (subagent / pane surfaces)
-```bash
-clog ACTION "dev-sa: dispatching '<one-line task summary>' to <subagent-type> subagent"
-```
-```bash
-clog ACTION "dev-sa-q: dispatching '<one-line summary>' to <subagent_type> subagent (model: <tier>, persona: <name>)" --agent dev-sa-q
-```
-```bash
-clog ACTION "dev-tab: opened cc on <pane> — <one-line task summary>" --session "$CLAUDE_SESSION_ID"
-```
-
-### After completion (subagent / pane)
-```bash
-clog ACTION "dev-sa: '<task>' complete — <one-line summary of result>"
-```
-
-### If files were changed
-```bash
-clog CODE "<description of what changed in <filename>>"
-```
-
-For `/dev` (inline), log the result after the work is done:
-```bash
-clog CODE "<description of what was implemented>"
-```
-
-### The learn step (all skills)
-Close the cycle with a LEARNING or LESSON when the run surfaced something reusable:
 ```bash
 clog LEARNING "<what was surprising / a prompt gap / a delegation tactic>" --family dev --kpi <effective|prompt_gap|failure>
 ```
-
-**On failure or timeout** — never leave it silent:
-```bash
-clog FOLLOWUP "dev-sa: '<task>' FAILED — <symptom>; retry with <narrower scope>"
-```
-
-### Logging block for delegated prompts
-When a subagent's work is itself log-worthy, append this to the generated prompt (after the Deliverable) so the subagent logs as it works:
-```
-## Logging (required — log in real time, not batched at the end)
-Log every meaningful step with `clog <TYPE> "<summary>" --agent <persona-slug>`:
-- DECISION — each choice + why       - ACTION — each state-changing step
-- CODE — each file created/edited    - LEARNING — anything surprising / a wrong assumption / a gap
-- FOLLOWUP — anything left undone, blocked, or needing a retry
-Every LEARNING needs `--kpi <effective|prompt_gap|failure>` — without it the entry is
-invisible to the retro loop that reads these. `--family <name>` too when you know it.
-Do NOT batch. In your final return, add a one-line note of what you clogged.
-```
-
-> **Why the `--kpi` line is explicit here.** A 2026-08-21 clog-sweep found 7 LEARNINGs with no
-> `--kpi`, all of them subagent-authored, while every parent-session LEARNING on the same threads
-> carried one. The cause was this block, not the subagents: it named LEARNING as a type but never
-> mentioned the flag, even though §6's own learn-step example shows it. Keep the two consistent.
-
----
-
-## 7. Examples
-
-### Example A — `/dev` (inline, small task; write → review → learn)
-
-User: "rename the `trackEvent` function to `logEvent` in analytics.ts"
-
-Model: `haiku` (informational — mechanical single-file rename, run inline).
-
-Prompt (run directly):
-```
-You are a codebase editor. Your only job is to rename a function across a single file.
-
-## Context
-- Working directory: ~/Code/textnow-mono
-- File: apps/web/src/analytics.ts
-
-## Task
-Rename all occurrences of `trackEvent` to `logEvent` in analytics.ts.
-Update the export and all internal call sites in the same file.
-```
-
-Execution: Claude applies the edit inline (no Agent dispatch), then **reviews** via `/pr-review` on the working diff, then **learns** (clog if anything was surprising).
-
----
-
-### Example B — `/dev-sa` (subagent, token-heavy; write → review → learn)
-
-User: "find all call sites of trackEverflowConversion across the mono repo"
-
-Model: `sonnet` · Subagent type: `Explore`
-
-Prompt (dispatched):
-```
-You are a codebase explorer. Your only job is to find and map symbols, call sites, or files matching a given pattern.
-
-## Context
-- Working directory: ~/Code/textnow-mono
-- Scope: all files under services/
-
-## Task
-Find all usages of `trackEverflowConversion` across services/.
-
-Return: a bullet list of file:line for each call site.
-Return only this. No intermediate output, no raw file contents.
-```
-
-Clog: `ACTION "dev-sa: dispatching 'find trackEverflowConversion call sites' to Explore subagent"`. If the subagent then edits code, run `/pr-review` on the change before the learn step.
-
----
-
-### Example C — `/dev-tab` (interactive, supervised; write → review → learn)
-
-User: "open a new tab to walk me through the PR review findings one by one"
-
-Prompt (shown to user, written to file, then passed to herdr-tab):
-```
-You are facilitating a structured design review with me. Your only job is to walk me
-through a set of findings one item at a time and record my decisions.
-
-## Context
-- Working directory: ~/Code/textnow-mono
-- Review findings: ~/Code/logs/reports/dev-tab/2026-06-02-pr-review.local.md
-- Background: PR #4821 — Everflow conversion tracking refactor
-
-## Task
-Present each finding (conflicts first, then gaps, then considerations).
-After each one ask: "How would you like to handle this?" Wait for my response.
-Confirm my decision in one sentence before moving to the next item.
-
-## How to operate
-One finding at a time. Do not proceed until I respond.
-```
-
-Execution: write prompt to `~/Code/logs/reports/dev-tab/YYYY-MM-DD-<slug>.local.md`, then run `~/.claude/skills/dev-tab/herdr-tab` with that file (requires `HERDR_ENV=1`).
-Clog: `ACTION "dev-tab: opened cc on <pane> — PR #4821 review walkthrough"`

@@ -26,11 +26,9 @@ description: Delegate a scoped task to a subagent on a deliberate 4-part prompt 
 
 ---
 
-## Step 1: Read SHARED.md
+## Step 1: Read SHARED.md and dispatch.md
 
-Before doing anything else, read `~/.claude/skills/_devkit/SHARED.md`.
-
-It contains: persona lookup (§1), the 4-part prompt contract — model → persona → request → deliverable (§2), the two cycles (§3), the ask-don't-assume rule (§4), routing (§5), and the clog pattern + Logging block (§6).
+Before doing anything else, read `~/.claude/skills/_devkit/SHARED.md` (persona lookup §1, the 4-part prompt contract §2, the two cycles §3, the ask-on-real-gaps rule §4, logging §5) and `~/.claude/skills/_devkit/dispatch.md` (the Git-safety, Style, and Logging blocks every dispatched prompt carries). Read `~/.claude/skills/_devkit/examples.md` only if unsure of the prompt's shape.
 
 `/dev-sa-q` runs the **quick cycle: write → learn** (no review). Its defining trait is the deliberate 4-part contract — every `/dev-sa-q` prompt names all four parts before it fires.
 
@@ -63,7 +61,7 @@ It contains: persona lookup (§1), the 4-part prompt contract — model → pers
      description: "<3-5 word summary>",
      subagent_type: "Explore",   // or general-purpose / a named agent
      model: "sonnet",            // Part 1 tier — haiku | sonnet | opus
-     prompt: "<the 4-part prompt (+ the Logging block from SHARED.md §6 when the subagent's work is log-worthy)>",
+     prompt: "<the 4-part prompt wrapped in the dispatch.md blocks (Logging only when the subagent's work is log-worthy)>",
      run_in_background: false    // /dev-sa-q waits and returns the result
    })
    ```

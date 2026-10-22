@@ -29,11 +29,9 @@ description: Open a new interactive Claude Code session in a separate herdr pane
 
 ---
 
-## Step 1: Read SHARED.md
+## Step 1: Read SHARED.md and dispatch.md
 
-Before doing anything else, read `~/.claude/skills/_devkit/SHARED.md`.
-
-It contains: persona lookup (§1), the 4-part prompt contract — model → persona → request → deliverable (§2), the two cycles (§3), the ask-don't-assume rule (§4), routing (§5), and the clog pattern (§6).
+Before doing anything else, read `~/.claude/skills/_devkit/SHARED.md` (persona lookup §1, the 4-part prompt contract §2, the two cycles §3, the ask-on-real-gaps rule §4, logging §5) and `~/.claude/skills/_devkit/dispatch.md` (the Git-safety, Style, and Logging blocks every pane prompt carries). Read `~/.claude/skills/_devkit/examples.md` only if unsure of the prompt's shape.
 
 `/dev-tab-q` runs the **quick cycle: write → learn** (no review). Like `/dev-sa-q`, every prompt names all four parts before it opens the pane.
 
@@ -41,7 +39,7 @@ It contains: persona lookup (§1), the 4-part prompt contract — model → pers
 
 ## Step 2: write — Open a herdr Pane
 
-Draft the 4-part prompt (per SHARED.md §2), ask only if there's a real gap (§4), then:
+Draft the 4-part prompt (per SHARED.md §2) wrapped in the dispatch.md blocks, ask only if there's a real gap (§4), then:
 
 1. **Write the prompt to a file:**
 
@@ -74,7 +72,7 @@ Draft the 4-part prompt (per SHARED.md §2), ask only if there's a real gap (§4
 
 ## Step 3: learn — clog a LEARNING / LESSON (no review)
 
-`/dev-tab-q` skips the review step. Close the cycle instead: if the run surfaced something reusable about how to prompt or delegate, `clog LEARNING "..." --family dev --kpi <effective|prompt_gap|failure>` per SHARED.md §6.
+`/dev-tab-q` skips the review step. Close the cycle instead: if the run surfaced something reusable about how to prompt or delegate, `clog LEARNING "..." --family dev --kpi <effective|prompt_gap|failure>` per SHARED.md §5.
 
 ---
 
