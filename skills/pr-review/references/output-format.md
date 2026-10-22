@@ -1,7 +1,7 @@
 # PR Review — Output Format Reference
 
 Loaded on demand from `pr-review/SKILL.md`. See top-level for target resolution, depth tiers, and
-dispatch; see [`lenses.md`](lenses.md) for the per-lens prompts. Mirrors the `branch-diff` report
+dispatch; see [`lenses/_shared.md`](lenses/_shared.md) and the per-lens files beside it for the lens prompts. Mirrors the `branch-diff` report
 style (same emoji key, same `file:line` discipline) so the two tools read consistently.
 
 ---
@@ -18,15 +18,22 @@ line. Do not add per-lens "strengths" sections, verdict lines, or emoji beyond t
 ### Summary
 <1-2 sentence overview of what the change concretely does>
 
+### Ask
+<ISSUE-KEY: n ACs resolved | No linked issue — reviewed on the diff alone. | Tracker fetch failed: <reason> — reviewed on the diff alone.>
+
 ### Findings
 
-| | Severity | Lens | File:Line | Issue → consequence |
-|---|---|---|---|---|
-| ❌ | critical | Security Auditor | `path/file.ts:L42` | what is wrong and the concrete consequence |
-| ⚠️ | warning | Saboteur | `path/file.ts:L10-15` | edge-case bug and when it triggers |
-| ⚠️ | warning | Test-coverage | `path/file.ts:L88` | untested behavior → regression a missing test would miss |
-| 🤔 | note | New Hire | `path/file.ts:L120` | readability/maintainability concern |
-| 🤔 | note | Simplify | `path/file.ts:L60` | over-engineering → simpler form to prefer |
+| | Severity | Lens | Anchor | File:Line | Issue → consequence |
+|---|---|---|---|---|---|
+| ❌ | critical | Security Auditor | diff | `path/file.ts:L42` | what is wrong and the concrete consequence |
+| ⚠️ | warning | Saboteur | AC 2 | `path/file.ts:L10-15` | change falsifies AC 2 → when it shows |
+| ⚠️ | warning | Saboteur | AC 3 | — (unimplemented) | AC 3 requires X; no code path implements it |
+| ⚠️ | warning | Test-coverage | diff | `path/file.ts:L88` | untested behavior → regression a missing test would miss |
+| 🤔 | note | New Hire | diff | `path/file.ts:L120` | readability/maintainability concern |
+| 🤔 | note | Simplify | diff | `path/file.ts:L60` | over-engineering → simpler form to prefer |
+
+### Adjacent, not reviewed
+<one line per pre-existing issue outside both anchors; omit the section when there are none>
 
 ### Per-lens detail
 
@@ -82,9 +89,11 @@ banner.
 
 ## Rules
 
-- **Every ⚠️/❌/🤔 finding must carry an exact `file:line` or `file:line-line`** in both the Findings
-  table and the per-lens detail.
-- Keep findings scoped to changed files or directly affected code paths evidenced by the diff.
+- **Every `diff`-anchored finding must carry an exact `file:line` or `file:line-line`** in both the
+  Findings table and the per-lens detail. An `AC`-anchored finding cites the closest `file:line`, or
+  `— (unimplemented)` when the gap is an absence.
+- Keep findings scoped to the two anchors in `SKILL.md` Core doctrine — a changed line or an AC.
+  Anything else goes under "Adjacent, not reviewed".
 - Do not present speculation as fact. If you must infer, label it `Inference:` and say why.
 - Do not reprint large diff blocks — quote only the relevant line(s).
 - De-duplicate across lenses: one row per underlying issue, in the most-specific lens's section.
@@ -94,7 +103,7 @@ banner.
 ## Optional local report file
 
 When invoked standalone (not through a delegating tool that owns its own report path), write the
-consolidated report to `$AI_NOTES_DIR/reports/pr-review/YYYY-MM-DD-pr-review-<head>.local.md`
-(default `~/Code/notes/AI/reports/pr-review/`); create the directory if it doesn't exist. When a
+consolidated report to `~/Code/logs/reports/pr-review/YYYY-MM-DD-pr-review-<head>.local.md`;
+create the directory if it doesn't exist. When a
 delegating tool (`gh-pr-review`, `watch-pr`) invokes this engine, return the report inline and let
 that tool own the file location and notifications.

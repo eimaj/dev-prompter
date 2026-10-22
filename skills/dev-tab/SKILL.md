@@ -18,22 +18,17 @@ description: Open a new interactive Claude Code session in a separate herdr pane
 - The task has no natural back-and-forth (pure background work) → use the `Agent` tool directly.
 - The task needs write/review cycles with tracked artifacts → use `/orchestrate` instead.
 
-> **Last Reviewed**: 2026-07-08
-> **Refresh Rule**: Update if the herdr API changes or cc alias changes.
-
 ---
 
-## Step 1: Read SHARED.md
+## Step 1: Read SHARED.md and dispatch.md
 
-Before doing anything else, read `~/.claude/skills/_devkit/SHARED.md`.
-
-It contains: persona lookup, the 4-part prompt contract (model → persona → request → deliverable), the two cycles, the ask-don't-assume rule, the routing decision table, the clog pattern, and one example per surface.
+Before doing anything else, read `~/.claude/skills/_devkit/SHARED.md` (persona lookup, the 4-part prompt contract, the two cycles, the ask-on-real-gaps rule, logging) and `~/.claude/skills/_devkit/dispatch.md` (the Git-safety, Style, and Logging blocks every pane prompt carries). Read `~/.claude/skills/_devkit/examples.md` only if unsure of the prompt's shape.
 
 ---
 
 ## Step 2: write — Open a herdr Pane
 
-Draft the 4-part prompt (per SHARED.md §2), ask only if there's a real gap (§4), then:
+Draft the 4-part prompt (per SHARED.md §2) wrapped in the dispatch.md blocks, ask only if there's a real gap (§4), then:
 
 1. **Write the prompt to a file:**
 
@@ -72,7 +67,7 @@ Once the pane's change exists, run the `/pr-review` skill on it — an advisory,
 
 ## Step 4: learn — clog a LEARNING / LESSON
 
-Close the cycle: if anything was surprising or reusable, `clog LEARNING`/`LESSON` per SHARED.md §6.
+Close the cycle: if anything was surprising or reusable, `clog LEARNING`/`LESSON` per SHARED.md §5.
 
 ---
 

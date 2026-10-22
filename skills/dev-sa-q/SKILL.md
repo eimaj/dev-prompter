@@ -15,22 +15,11 @@ description: Delegate a scoped task to a subagent on a deliberate 4-part prompt 
 - You want to drive a supervised session in a new pane → `/dev-tab` (reviewed) or `/dev-tab-q` (not).
 - Multi-phase work with tracked artifacts (write → review → retro) → `/orchestrate`.
 
-> **Last Reviewed**: 2026-07-14
-> **Refresh Rule**: Event-driven — update when the Agent tool's `model` values, the personas file, or the prompt contract change.
-
-## Related Skills
-
-- [`dev-sa`](../dev-sa/SKILL.md) — same subagent surface but runs the dev cycle (write → **review** → learn); reach for it when you want `/pr-review` on the change.
-- [`dev-tab-q`](../dev-tab-q/SKILL.md) — the same write → learn (no-review) cycle driven interactively from a new herdr pane.
-- `~/.claude/skills/_devkit/SHARED.md` — the shared base: 4-part contract, ask-don't-assume rule, personas, clog pattern.
-
 ---
 
-## Step 1: Read SHARED.md
+## Step 1: Read SHARED.md and dispatch.md
 
-Before doing anything else, read `~/.claude/skills/_devkit/SHARED.md`.
-
-It contains: persona lookup (§1), the 4-part prompt contract — model → persona → request → deliverable (§2), the two cycles (§3), the ask-don't-assume rule (§4), routing (§5), and the clog pattern + Logging block (§6).
+Before doing anything else, read `~/.claude/skills/_devkit/SHARED.md` (persona lookup §1, the 4-part prompt contract §2, the two cycles §3, the ask-on-real-gaps rule §4, logging §5) and `~/.claude/skills/_devkit/dispatch.md` (the Git-safety, Style, and Logging blocks every dispatched prompt carries). Read `~/.claude/skills/_devkit/examples.md` only if unsure of the prompt's shape.
 
 `/dev-sa-q` runs the **quick cycle: write → learn** (no review). Its defining trait is the deliberate 4-part contract — every `/dev-sa-q` prompt names all four parts before it fires.
 
@@ -38,7 +27,7 @@ It contains: persona lookup (§1), the 4-part prompt contract — model → pers
 
 ## Step 2: write — Assemble the 4-part prompt and dispatch
 
-1. **Build the contract** (SHARED.md §2): pick the model tier (recommend + one-line why), copy the persona **verbatim** from `~/.claude/agents/personas.md` (§1; derive-and-add a row if none fits), write the scoped request with all context, and state the deliverable — end subagent prompts with `Return only this. No intermediate output.`
+1. **Build the contract** (SHARED.md §2): pick the model tier (recommend + one-line why), copy the persona **verbatim** from `persona find` (§1; derive-and-add a row if none fits), write the scoped request with all context, and state the deliverable — end subagent prompts with `Return only this. No intermediate output.`
 
 2. **Ask only on a real gap** (SHARED.md §4). If scope / deliverable / depth is genuinely open, ask once via the `AskUserQuestion` tool. If the request already answers them, don't — there is **no** mandatory clarifying round and **no** show-and-approve gate. Draft and go.
 
@@ -63,7 +52,7 @@ It contains: persona lookup (§1), the 4-part prompt contract — model → pers
      description: "<3-5 word summary>",
      subagent_type: "Explore",   // or general-purpose / a named agent
      model: "sonnet",            // Part 1 tier — haiku | sonnet | opus
-     prompt: "<the 4-part prompt (+ the Logging block from SHARED.md §6 when the subagent's work is log-worthy)>",
+     prompt: "<the 4-part prompt wrapped in the dispatch.md blocks (Logging only when the subagent's work is log-worthy)>",
      run_in_background: false    // /dev-sa-q waits and returns the result
    })
    ```
@@ -83,15 +72,6 @@ It contains: persona lookup (§1), the 4-part prompt contract — model → pers
 ## Step 3: learn — clog a LEARNING / LESSON (no review)
 
 `/dev-sa-q` skips the review step. Close the cycle instead: if the run surfaced something reusable about how to prompt or delegate, `clog LEARNING "..." --family dev --kpi <effective|prompt_gap|failure>`. If the subagent's return doesn't mention what it logged, note that as a LEARNING so the contract can be tightened.
-
-## Rules
-
-- **Deliberate 4-part contract** — model, verbatim persona, scoped request, explicit deliverable. Missing one → not ready. This is what distinguishes `/dev-sa-q` from a bare `/dev-sa`.
-- **Ask only on real gaps** — no mandatory clarifying round, no recommend-and-confirm model ceremony, no show-before-fire gate. Recommend the tier with a one-line why and proceed; ask via `AskUserQuestion` only when a gap would change the prompt.
-- **No review pass** — `/dev-sa-q` runs write → learn. Want `/pr-review` on the change? use `/dev-sa`.
-- **Foreground by default** — `run_in_background:false`, so `/dev-sa-q` returns the result in-line.
-- **Personas come from `~/.claude/agents/personas.md`** — verbatim, or derive-and-add a new row.
-- **Log both layers** — `/dev-sa-q` clogs its dispatch, completion, and learn; and carries the Logging block into the subagent when the delegated work is itself log-worthy. Neither layer batches or skips.
 
 ## Signal Keywords
 <!-- Comma-separated terms the skills collector uses to attribute learnings to this skill -->

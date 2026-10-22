@@ -15,22 +15,17 @@ description: Delegate the current ask to a one-shot subagent to protect the pare
 - The user wants to drive an interactive step-by-step session in a new pane → use `/dev-tab` instead.
 - The task has multiple phases with tracked artifacts → use `/orchestrate` or `/dev-orchestrate`.
 
-> **Last Reviewed**: 2026-06-02
-> **Refresh Rule**: Event-driven — update when Agent tool subagent types or invocation patterns change.
-
 ---
 
-## Step 1: Read SHARED.md
+## Step 1: Read SHARED.md and dispatch.md
 
-Before doing anything else, read `~/.claude/skills/_devkit/SHARED.md`.
-
-It contains: persona lookup, the 4-part prompt contract (model → persona → request → deliverable), the two cycles, the ask-don't-assume rule, the routing decision table, the clog pattern, and one example per surface.
+Before doing anything else, read `~/.claude/skills/_devkit/SHARED.md` (persona lookup, the 4-part prompt contract, the two cycles, the ask-on-real-gaps rule, logging) and `~/.claude/skills/_devkit/dispatch.md` (the Git-safety, Style, and Logging blocks every dispatched prompt carries). Read `~/.claude/skills/_devkit/examples.md` only if unsure of the prompt's shape.
 
 ---
 
 ## Step 2: write — Dispatch via Agent()
 
-Draft the 4-part prompt (per SHARED.md §2 — the Model part is the Agent `model` value), ask only if there's a real gap (§4), then:
+Draft the 4-part prompt (per SHARED.md §2 — the Model part is the Agent `model` value) wrapped in the dispatch.md blocks, ask only if there's a real gap (§4), then:
 
 1. **Choose the subagent type:**
 
@@ -71,21 +66,7 @@ Draft the 4-part prompt (per SHARED.md §2 — the Model part is the Agent `mode
    clog ACTION "dev-sa: '<task>' complete — <one-line summary of what the subagent found or changed>"
    ```
 
-   If the subagent made file edits, also log a CODE entry for each file changed:
-
-   ```bash
-   clog CODE "<description of what changed in <filename>>"
-   ```
-
-   **On failure or timeout** (log this instead — do not leave failures silent):
-   ```bash
-   clog FOLLOWUP "dev-sa: 'scan loyalty service for proto dependency gaps' FAILED — subagent timed out at file scan step; retry with narrower scope"
-   ```
-
-   **Before file edits** (intent record — fires before the Edit tool call):
-   ```bash
-   clog CODE "about to edit services/loyalty/everflow/offers.go: add missing MustBeAll availability check"
-   ```
+   Add a `clog CODE` per file the subagent edited, or a `clog FOLLOWUP` instead on failure or timeout (SHARED.md §5).
 
 > **Routing gate:** if the ask needs multiple phases (write → review → retro), will produce tracked artifacts, or involves iterative cycles, stop here and use `/orchestrate` instead. `/dev-sa` is for one-shot delegation — if the task has layers, it's the wrong tool.
 
@@ -99,7 +80,7 @@ If the subagent changed code, run the `/pr-review` skill on the change once it r
 
 ## Step 4: learn — clog a LEARNING / LESSON
 
-Close the cycle: if the run surfaced a prompt gap, a wrong assumption, or a reusable delegation tactic, `clog LEARNING`/`LESSON` per SHARED.md §6.
+Close the cycle: if the run surfaced a prompt gap, a wrong assumption, or a reusable delegation tactic, `clog LEARNING`/`LESSON` per SHARED.md §5.
 
 ---
 

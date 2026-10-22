@@ -1,0 +1,173 @@
+#!/usr/bin/env python3
+"""persona: look up, add, and lint task personas in a JSONL catalog.
+
+Reads ${PERSONAS_FILE:-$HOME/.claude/agents/personas.jsonl}: one JSON object per line with
+name, kind (task | lens | one-off), statement, deliverable, and optional notes.
+
+Usage:
+  persona find [--all] <keyword> [keyword ...]
+      print up to 5 matches as name<TAB>statement[<TAB>notes]; task rows only unless --all
+  persona add [--kind task|lens|one-off] [--notes TEXT] <name> <statement> <deliverable>
+      append one entry (locked append; the file is never rewritten)
+  persona lint
+      validate every line
+
+find and lint never write. find exits 1 when nothing matches; add and lint exit 1 on bad input.
+"""
+
+import fcntl
+import json
+import os
+import re
+import sys
+
+KINDS = ("task", "lens", "one-off")
+REQUIRED = ("name", "kind", "statement", "deliverable")
+OPTIONAL = ("notes",)
+MAX_RESULTS = 5
+STOPWORDS = {
+    "a", "an", "and", "are", "for", "in", "is", "job", "of", "on", "only",
+    "or", "the", "to", "with", "you", "your",
+}
+
+
+def personas_path():
+    return os.environ.get("PERSONAS_FILE") or os.path.expanduser("~/.claude/agents/personas.jsonl")
+
+
+def parse(text, path):
+    """Return (entries, problems); each entry is (line_no, dict)."""
+    entries, problems = [], []
+    # Split on "\n" only: str.splitlines() also breaks on U+2028/U+2029/U+0085, which json.dumps
+    # leaves unescaped with ensure_ascii=False.
+    for n, line in enumerate(text.split("\n"), 1):
+        if not line.strip():
+            continue
+        try:
+            obj = json.loads(line)
+        except json.JSONDecodeError as e:
+            problems.append(f"{path}:{n}: invalid JSON: {e.msg}")
+            continue
+        if not isinstance(obj, dict):
+            problems.append(f"{path}:{n}: not a JSON object")
+            continue
+        entries.append((n, obj))
+    return entries, problems
+
+
+def load(path):
+    try:
+        with open(path, encoding="utf-8") as f:
+            text = f.read()
+    except OSError as e:
+        sys.exit(f"persona: cannot read {path}: {e.strerror}")
+    return parse(text, path)
+
+
+def entry_problems(obj):
+    problems = []
+    for key in REQUIRED:
+        if not isinstance(obj.get(key), str) or not obj[key].strip():
+            problems.append(f"missing or empty '{key}'")
+    for key in obj:
+        if key not in REQUIRED + OPTIONAL:
+            problems.append(f"unknown key '{key}'")
+    for key, value in obj.items():
+        if isinstance(value, str) and re.search("[\x00-\x1f\x85  ]", value):
+            problems.append(f"control character or line break in '{key}'")
+    if obj.get("kind") not in KINDS:
+        problems.append(f"kind must be one of {', '.join(KINDS)}")
+    if "Your only job is" not in str(obj.get("statement", "")):
+        problems.append("statement must contain 'Your only job is'")
+    return problems
+
+
+def cmd_find(args):
+    show_all = "--all" in args
+    args = [a for a in args if a != "--all"]
+    keywords = [k.lower() for a in args for k in re.split(r"\W+", a) if k]
+    keywords = [k for k in keywords if k not in STOPWORDS and len(k) > 1]
+    if not keywords:
+        sys.exit("persona find: give at least one keyword")
+    entries, _ = load(personas_path())
+    scored = []
+    for order, (_, obj) in enumerate(entries):
+        if not show_all and obj.get("kind") != "task":
+            continue
+        name, statement = str(obj.get("name", "")), str(obj.get("statement", ""))
+        score = sum(2 * (k in name.lower()) + (k in statement.lower()) for k in keywords)
+        if score:
+            scored.append((-score, order, obj))
+    if not scored:
+        print("persona find: no match", file=sys.stderr)
+        return 1
+    for _, _, obj in sorted(scored, key=lambda s: s[:2])[:MAX_RESULTS]:
+        fields = [obj["name"], obj["statement"]] + ([obj["notes"]] if obj.get("notes") else [])
+        print("\t".join(fields))
+    return 0
+
+
+def cmd_add(args):
+    kind, notes, positional = "task", None, []
+    it = iter(args)
+    for a in it:
+        if a == "--kind":
+            kind = next(it, "")
+        elif a == "--notes":
+            notes = next(it, "")
+        else:
+            positional.append(a)
+    if len(positional) != 3:
+        sys.exit("persona add: need <name> <statement> <deliverable>")
+    obj = dict(zip(("name", "kind", "statement", "deliverable"),
+                   (positional[0].strip(), kind, positional[1].strip(), positional[2].strip())))
+    if notes is not None:
+        obj["notes"] = notes.strip()
+    problems = entry_problems(obj)
+    if problems:
+        sys.exit("persona add: " + "; ".join(problems))
+    path = personas_path()
+    with open(path, "a+", encoding="utf-8") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        f.seek(0)
+        text = f.read()
+        entries, bad = parse(text, path)
+        if bad:
+            sys.exit("persona add: refusing to append to an invalid file; run persona lint")
+        if any(str(o.get("name", "")).lower() == obj["name"].lower() for _, o in entries):
+            sys.exit(f"persona add: '{obj['name']}' already exists")
+        prefix = "" if not text or text.endswith("\n") else "\n"
+        f.write(prefix + json.dumps(obj, ensure_ascii=False) + "\n")
+    print(f"persona add: added '{obj['name']}' ({kind}) to {path}")
+    return 0
+
+
+def cmd_lint(_args):
+    path = personas_path()
+    entries, findings = load(path)
+    seen = {}
+    for n, obj in entries:
+        findings += [f"{path}:{n}: {p}" for p in entry_problems(obj)]
+        key = str(obj.get("name", "")).lower()
+        if key in seen:
+            findings.append(f"{path}:{n}: duplicate name '{obj.get('name')}' (first at line {seen[key]})")
+        seen.setdefault(key, n)
+    for f in findings:
+        print(f)
+    if findings:
+        return 1
+    counts = ", ".join(f"{k}={sum(o.get('kind') == k for _, o in entries)}" for k in KINDS)
+    print(f"persona lint: ok ({len(entries)} personas: {counts})")
+    return 0
+
+
+def main(argv):
+    commands = {"find": cmd_find, "add": cmd_add, "lint": cmd_lint}
+    if len(argv) < 2 or argv[1] not in commands:
+        sys.stderr.write(__doc__)
+        return 2
+    return commands[argv[1]](argv[2:])
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))
