@@ -2,6 +2,8 @@
 
 Read on demand, when unsure of a prompt's shape. The rules live in [`SHARED.md`](SHARED.md) and [`dispatch.md`](dispatch.md); where an example and a rule disagree, the rule wins.
 
+Examples B and C are dispatched, so they carry the mandatory `dispatch.md` blocks. To keep this file short, each block appears as a `<<… verbatim from dispatch.md §N>>` placeholder line in the position it goes. A real prompt pastes the full block text there; it never drops one.
+
 ### Example A — `/dev` (inline, small task; write → review → learn)
 
 User: "rename the `trackEvent` function to `logEvent` in analytics.ts"
@@ -33,6 +35,8 @@ Model: `sonnet` · Subagent type: `Explore`
 
 Prompt (dispatched):
 ```
+<<Git-safety block — verbatim from dispatch.md §1>>
+
 You are a codebase explorer. Your only job is to find and map symbols, call sites, or files matching a given pattern.
 
 ## Context
@@ -43,7 +47,9 @@ You are a codebase explorer. Your only job is to find and map symbols, call site
 Find all usages of `trackEverflowConversion` across services/.
 
 Return: a bullet list of file:line for each call site.
-Return only this. No intermediate output, no raw file contents.
+Return only this. No intermediate output, no raw file contents unless explicitly requested.
+
+<<Style block — verbatim from dispatch.md §2>>
 ```
 
 Clog: `ACTION "dev-sa: dispatching 'find trackEverflowConversion call sites' to Explore subagent"`. If the subagent then edits code, run `/pr-review` on the change before the learn step.
@@ -54,8 +60,12 @@ Clog: `ACTION "dev-sa: dispatching 'find trackEverflowConversion call sites' to 
 
 User: "open a new tab to walk me through the PR review findings one by one"
 
+Model: `sonnet` (passed as `herdr-tab --model sonnet`)
+
 Prompt (shown to user, written to file, then passed to herdr-tab):
 ```
+<<Git-safety block — verbatim from dispatch.md §1>>
+
 You are facilitating a structured design review with me. Your only job is to walk me
 through a set of findings one item at a time and record my decisions.
 
@@ -71,6 +81,8 @@ Confirm my decision in one sentence before moving to the next item.
 
 ## How to operate
 One finding at a time. Do not proceed until I respond.
+
+<<Style block — verbatim from dispatch.md §2>>
 ```
 
 Execution: write prompt to `~/Code/logs/reports/dev-tab/YYYY-MM-DD-<slug>.local.md`, then run `~/.claude/skills/dev-tab/herdr-tab` with that file (requires `HERDR_ENV=1`).
