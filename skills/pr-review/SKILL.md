@@ -202,7 +202,15 @@ Merge the sub-agents' findings into **one severity-ranked report**:
 
 ### 6. Deliver (advisory, never posts)
 
-**Load `~/.claude/agents/voice/review-comm.md` (with its parents `voice/base.md` + `voice/technical-comm.md`) as the writing preamble before composing the report.** It carries the evidentiary discipline this step depends on — severity needs a concrete actor and path, verified vs unverified labelled per claim, own your own errors in-line, correct the record rather than erase it, say what you did not do — plus the plain-English shape to use if the user then asks for an explanation without the technical talk. Load it inline as context; do not spawn a subagent for it.
+Write the report under these rules (from `~/.claude/agents/voice/review-comm.md`):
+
+1. `critical` needs a concrete actor and a path, not just a mechanism. State the reachability beside the mechanism.
+2. Label each claim verified or `unverified`, with what would settle it. Never hedge the difference.
+3. Own an error in your own earlier advice in one line, then continue.
+4. Withdraw a finding with a dated note and updated counts; never silently delete it.
+5. State what you did not do (tests not run, siblings left alone, fixes deferred) and why.
+
+Do not load the voice files to write the report. Load `review-comm.md` (with its parents `voice/base.md` + `voice/technical-comm.md`) only when the user asks for a plain-English explanation, and use its "Plain-English mode" shape.
 
 Emit the consolidated report + a copy-paste suggested comment per
 [`references/output-format.md`](references/output-format.md). End with the advisory
