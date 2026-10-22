@@ -15,9 +15,6 @@ description: Delegate the current ask to a one-shot subagent to protect the pare
 - The user wants to drive an interactive step-by-step session in a new pane → use `/dev-tab` instead.
 - The task has multiple phases with tracked artifacts → use `/orchestrate` or `/dev-orchestrate`.
 
-> **Last Reviewed**: 2026-06-02
-> **Refresh Rule**: Event-driven — update when Agent tool subagent types or invocation patterns change.
-
 ---
 
 ## Step 1: Read SHARED.md and dispatch.md
@@ -69,21 +66,7 @@ Draft the 4-part prompt (per SHARED.md §2 — the Model part is the Agent `mode
    clog ACTION "dev-sa: '<task>' complete — <one-line summary of what the subagent found or changed>"
    ```
 
-   If the subagent made file edits, also log a CODE entry for each file changed:
-
-   ```bash
-   clog CODE "<description of what changed in <filename>>"
-   ```
-
-   **On failure or timeout** (log this instead — do not leave failures silent):
-   ```bash
-   clog FOLLOWUP "dev-sa: 'scan loyalty service for proto dependency gaps' FAILED — subagent timed out at file scan step; retry with narrower scope"
-   ```
-
-   **Before file edits** (intent record — fires before the Edit tool call):
-   ```bash
-   clog CODE "about to edit services/loyalty/everflow/offers.go: add missing MustBeAll availability check"
-   ```
+   Add a `clog CODE` per file the subagent edited, or a `clog FOLLOWUP` instead on failure or timeout (SHARED.md §5).
 
 > **Routing gate:** if the ask needs multiple phases (write → review → retro), will produce tracked artifacts, or involves iterative cycles, stop here and use `/orchestrate` instead. `/dev-sa` is for one-shot delegation — if the task has layers, it's the wrong tool.
 

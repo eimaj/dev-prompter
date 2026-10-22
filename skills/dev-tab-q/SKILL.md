@@ -18,15 +18,6 @@ description: Open a new interactive Claude Code session in a separate herdr pane
 - The task is small and fast → `/dev`.
 - Multi-phase work with tracked artifacts (write → review → retro) → `/orchestrate`.
 
-> **Last Reviewed**: 2026-07-14
-> **Refresh Rule**: Update if the herdr API, the `herdr-tab` script, or the prompt contract change.
-
-## Related Skills
-
-- [`dev-tab`](../dev-tab/SKILL.md) — same pane surface but runs the dev cycle (write → **review** → learn); reach for it when you want `/pr-review` on the change.
-- [`dev-sa-q`](../dev-sa-q/SKILL.md) — the same write → learn (no-review) cycle dispatched to a one-shot subagent instead of a pane.
-- `~/.claude/skills/_devkit/SHARED.md` — the shared base: 4-part contract, ask-don't-assume rule, personas, clog pattern.
-
 ---
 
 ## Step 1: Read SHARED.md and dispatch.md

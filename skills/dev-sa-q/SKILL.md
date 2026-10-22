@@ -15,15 +15,6 @@ description: Delegate a scoped task to a subagent on a deliberate 4-part prompt 
 - You want to drive a supervised session in a new pane → `/dev-tab` (reviewed) or `/dev-tab-q` (not).
 - Multi-phase work with tracked artifacts (write → review → retro) → `/orchestrate`.
 
-> **Last Reviewed**: 2026-07-14
-> **Refresh Rule**: Event-driven — update when the Agent tool's `model` values, the personas file, or the prompt contract change.
-
-## Related Skills
-
-- [`dev-sa`](../dev-sa/SKILL.md) — same subagent surface but runs the dev cycle (write → **review** → learn); reach for it when you want `/pr-review` on the change.
-- [`dev-tab-q`](../dev-tab-q/SKILL.md) — the same write → learn (no-review) cycle driven interactively from a new herdr pane.
-- `~/.claude/skills/_devkit/SHARED.md` — the shared base: 4-part contract, ask-don't-assume rule, personas, clog pattern.
-
 ---
 
 ## Step 1: Read SHARED.md and dispatch.md
@@ -81,15 +72,6 @@ Before doing anything else, read `~/.claude/skills/_devkit/SHARED.md` (persona l
 ## Step 3: learn — clog a LEARNING / LESSON (no review)
 
 `/dev-sa-q` skips the review step. Close the cycle instead: if the run surfaced something reusable about how to prompt or delegate, `clog LEARNING "..." --family dev --kpi <effective|prompt_gap|failure>`. If the subagent's return doesn't mention what it logged, note that as a LEARNING so the contract can be tightened.
-
-## Rules
-
-- **Deliberate 4-part contract** — model, verbatim persona, scoped request, explicit deliverable. Missing one → not ready. This is what distinguishes `/dev-sa-q` from a bare `/dev-sa`.
-- **Ask only on real gaps** — no mandatory clarifying round, no recommend-and-confirm model ceremony, no show-before-fire gate. Recommend the tier with a one-line why and proceed; ask via `AskUserQuestion` only when a gap would change the prompt.
-- **No review pass** — `/dev-sa-q` runs write → learn. Want `/pr-review` on the change? use `/dev-sa`.
-- **Foreground by default** — `run_in_background:false`, so `/dev-sa-q` returns the result in-line.
-- **Personas come from `persona find`** (SHARED.md §1) — verbatim, or derive and `persona add` a new row.
-- **Log both layers** — `/dev-sa-q` clogs its dispatch, completion, and learn; and carries the Logging block into the subagent when the delegated work is itself log-worthy. Neither layer batches or skips.
 
 ## Signal Keywords
 <!-- Comma-separated terms the skills collector uses to attribute learnings to this skill -->

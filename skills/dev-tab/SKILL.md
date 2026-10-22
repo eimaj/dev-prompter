@@ -18,9 +18,6 @@ description: Open a new interactive Claude Code session in a separate herdr pane
 - The task has no natural back-and-forth (pure background work) → use the `Agent` tool directly.
 - The task needs write/review cycles with tracked artifacts → use `/orchestrate` instead.
 
-> **Last Reviewed**: 2026-07-08
-> **Refresh Rule**: Update if the herdr API changes or cc alias changes.
-
 ---
 
 ## Step 1: Read SHARED.md and dispatch.md

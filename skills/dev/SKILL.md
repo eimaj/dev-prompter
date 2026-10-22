@@ -14,9 +14,6 @@ description: Run a dev task directly in the current session — small, fast, nee
 - The user wants to drive an interactive session step-by-step from a new pane → use `/dev-tab` instead.
 - The task has multiple phases (write → review → retro) → use `/orchestrate` or `/dev-orchestrate`.
 
-> **Last Reviewed**: 2026-06-02
-> **Refresh Rule**: Event-driven — update if inline execution patterns change.
-
 ---
 
 ## Step 1: Read SHARED.md
@@ -32,11 +29,7 @@ Draft the 4-part prompt (per SHARED.md §2 — for inline the Model part is info
 - No `Agent()` dispatch.
 - No new herdr pane.
 - Claude applies edits, runs commands, and produces output here in the main context.
-- Log the code after completion:
-
-```bash
-clog CODE "<description of what was implemented>"
-```
+- Log each changed file with `clog CODE` (SHARED.md §5).
 
 ---
 

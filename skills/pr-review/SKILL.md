@@ -22,14 +22,6 @@ a branch pair, a PR number, or a repo path.
 [`references/output-format.md`](references/output-format.md)) plus a copy-paste suggested comment.
 **Advisory only — it never posts to GitHub and never blocks.**
 
-## Related Skills
-
-- [`branch-diff`](../branch-diff/SKILL.md) — change summary + light diff-scoped review; defers deep review here.
-- [`gh-pr-review`](../gh-pr-review/SKILL.md) — discovers assigned PRs and delegates the per-PR review pass to this engine.
-- [`watch-pr`](../watch-pr/SKILL.md) — incremental review-comment loop; uses this for a full one-shot pass.
-- [`gh-retro`](../gh-retro/SKILL.md) — retro that evaluates and improves this orchestrator's tier/lens logic.
-- The `tn-*` navigation skills — loaded per repo to give lens sub-agents codebase context (see Repo Nav Mapping).
-
 ## Core doctrine
 
 - **The diff, changed-file list, on-disk file contents, and the linked issue's text (description,
