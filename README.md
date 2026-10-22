@@ -155,3 +155,12 @@ dev-prompter/
   skills/pr-review/          the review step the dev family calls
   agents/personas.md         task personas + pr-review lens personas (trimmed)
 ```
+
+## Credits
+
+The `/pr-review` lenses are adapted from the MIT-licensed "adversarial-reviewer" skill by ekreloff (via
+github.com/alirezarezvani/claude-skills) and Anthropic's MIT-licensed `pr-test-analyzer` agent
+(`anthropics/claude-plugins-official`), by way of Horizon's `pr-reviewer`. The persona methodology,
+severity model, and anti-patterns are preserved; repo-specific test conventions (MSW, `@covers`,
+three-lane e2e, React Compiler, the Jest 100% gate) and the CI blocking/verdict contract are dropped —
+this engine is advisory only. The Simplify / YAGNI lens is new here.

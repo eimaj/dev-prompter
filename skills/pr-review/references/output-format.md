@@ -1,7 +1,7 @@
 # PR Review — Output Format Reference
 
 Loaded on demand from `pr-review/SKILL.md`. See top-level for target resolution, depth tiers, and
-dispatch; see [`lenses.md`](lenses.md) for the per-lens prompts. Mirrors the `branch-diff` report
+dispatch; see [`lenses/_shared.md`](lenses/_shared.md) and the per-lens files beside it for the lens prompts. Mirrors the `branch-diff` report
 style (same emoji key, same `file:line` discipline) so the two tools read consistently.
 
 ---
