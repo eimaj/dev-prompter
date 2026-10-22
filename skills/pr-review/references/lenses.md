@@ -6,7 +6,8 @@ Tiers; this file is the choose-when table plus the per-lens prompt each sub-agen
 Each lens runs as its **own sub-agent with clean context** — the separation is the point, so a single
 mental model can't share one blind spot across every lens. Give the sub-agent its persona statement
 **verbatim** (these match the rows in `agents/personas.md`), the change reference (changed-file paths
-+ the exact diff command for the target — see `SKILL.md` step 1), and the repo nav context if one was
++ the exact diff command for the target — see `SKILL.md` step 1), the linked issue's acceptance
+criteria verbatim (or "no linked issue"), this shared doctrine, and the repo nav context if one was
 loaded.
 
 **Shared doctrine (all lenses):**
@@ -16,6 +17,10 @@ loaded.
   invent issues to fill space.
 - Be direct and concrete ("throws when `user` is undefined"), never hedged.
 - Read the **full file**, not only the changed lines — bugs live in how new code meets existing code.
+- A finding must anchor to (1) a line the change added, modified, or deleted, or (2) an acceptance
+  criterion — one left unimplemented, satisfied in name only, or falsified by the change. Label each
+  finding `diff` or `AC <n>`. A real problem in untouched code that neither anchor reaches is one line
+  under "Adjacent, not reviewed", never a finding.
 - Return findings only; never post a comment or modify the repo.
 
 ---
