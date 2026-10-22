@@ -171,6 +171,16 @@ Each sub-agent returns its findings only — it never posts or modifies the repo
 label every finding with its anchor — `diff` or `AC <n>` — so a strayed finding is visible at
 consolidation rather than after it reaches the human.
 
+Each lens returns only lines of this form, one per finding:
+
+```text
+<critical|warning|note> | <diff|AC n> | <file:line, file:line-line, or — for an AC-only gap> | <issue> → <consequence>
+```
+
+A lens with nothing to report returns exactly `No <lens> findings.`; one that does not apply returns
+exactly `N/A: <reason>`; one that could not finish (diff unreadable, tool failure) returns
+`INCOMPLETE: <what it could not read>` — never a silent empty result.
+
 ### 5. Consolidate
 
 Merge the sub-agents' findings into **one severity-ranked report**:
@@ -182,8 +192,10 @@ Merge the sub-agents' findings into **one severity-ranked report**:
 - Cross-lens corroboration may promote a finding one level (NOTE → WARNING). It **never** manufactures
   a CRITICAL — a finding is CRITICAL only when the issue itself meets the definition (data loss,
   security breach, production outage), no matter how many lenses flagged it.
+- Move a finding whose anchor is neither `diff` nor `AC <n>`, or whose `diff` anchor cites an
+  unchanged line, to "Adjacent, not reviewed" as one line.
 - Drop nothing silently. A lens that found nothing gets a one-line "no findings"; a lens that doesn't
-  apply gets `N/A`.
+  apply gets `N/A`; a lens that returned `INCOMPLETE` keeps that line in its section.
 
 ### 6. Deliver (advisory, never posts)
 

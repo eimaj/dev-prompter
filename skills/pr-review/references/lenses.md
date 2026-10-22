@@ -21,7 +21,8 @@ loaded.
   criterion — one left unimplemented, satisfied in name only, or falsified by the change. Label each
   finding `diff` or `AC <n>`. A real problem in untouched code that neither anchor reaches is one line
   under "Adjacent, not reviewed", never a finding.
-- Return findings only; never post a comment or modify the repo.
+- Return findings only, one line each in the shape `SKILL.md` step 4 defines
+  (`severity | anchor | file:line | issue → consequence`); never post a comment or modify the repo.
 
 ---
 
