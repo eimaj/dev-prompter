@@ -103,7 +103,7 @@ banner.
 ## Optional local report file
 
 When invoked standalone (not through a delegating tool that owns its own report path), write the
-consolidated report to `$AI_NOTES_DIR/reports/pr-review/YYYY-MM-DD-pr-review-<head>.local.md`
-(default `~/Code/notes/AI/reports/pr-review/`); create the directory if it doesn't exist. When a
+consolidated report to `~/Code/logs/reports/pr-review/YYYY-MM-DD-pr-review-<head>.local.md`;
+create the directory if it doesn't exist. When a
 delegating tool (`gh-pr-review`, `watch-pr`) invokes this engine, return the report inline and let
 that tool own the file location and notifications.
