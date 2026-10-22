@@ -276,7 +276,7 @@ through a set of findings one item at a time and record my decisions.
 
 ## Context
 - Working directory: ~/Code/textnow-mono
-- Review findings: ~/Code/notes/reports/dev-tab/2026-06-02-pr-review.local.md
+- Review findings: ~/Code/logs/reports/dev-tab/2026-06-02-pr-review.local.md
 - Background: PR #4821 — Everflow conversion tracking refactor
 
 ## Task
@@ -288,5 +288,5 @@ Confirm my decision in one sentence before moving to the next item.
 One finding at a time. Do not proceed until I respond.
 ```
 
-Execution: write prompt to `~/Code/notes/reports/dev-tab/YYYY-MM-DD-<slug>.local.md`, then run `~/.claude/skills/dev-tab/herdr-tab` with that file (requires `HERDR_ENV=1`).
+Execution: write prompt to `~/Code/logs/reports/dev-tab/YYYY-MM-DD-<slug>.local.md`, then run `~/.claude/skills/dev-tab/herdr-tab` with that file (requires `HERDR_ENV=1`).
 Clog: `ACTION "dev-tab: opened cc on <pane> — PR #4821 review walkthrough"`
