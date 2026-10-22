@@ -66,13 +66,28 @@ Pick the target from context, in priority order:
 2. **A PR is checked out** (e.g. after `pull-pr`) → diff the head against its base.
 3. **Otherwise** → review the working diff (uncommitted + committed-ahead-of-base changes).
 
-Gather the changed-file list and the diff via `git` (fetch the base first when comparing remotes):
+Gather the changed-file list and the diff via `git` (fetch the base first when comparing remotes).
+The command depends on the target — three-dot `<base>...<head>` compares commits only, so it cannot
+see a working diff.
+
+Branch pair or checked-out PR (committed changes):
 
 ```bash
 git diff --name-only <base>...<head>
 git diff <base>...<head> --stat
 git diff <base>...<head>
 ```
+
+Working diff (committed-ahead + uncommitted tracked changes, plus untracked files):
+
+```bash
+git diff --name-only $(git merge-base <base> HEAD)
+git diff $(git merge-base <base> HEAD) --stat
+git diff $(git merge-base <base> HEAD)
+git ls-files --others --exclude-standard
+```
+
+Untracked files have no diff; every line in them is new, so a lens reads them whole.
 
 ### 1b. Resolve the ask (the linked issue's acceptance criteria)
 
@@ -91,8 +106,8 @@ If no issue can be resolved, say so in one line in the report and review on the 
 invent ACs, and never infer them from the diff — a criterion reverse-engineered from the code under
 review can only ever agree with it.
 
-Hand each lens sub-agent the **change reference** — the changed-file paths plus the base/head refs —
-and have it gather **the diff itself as its primary source**. It should open the full changed files
+Hand each lens sub-agent the **change reference** — the changed-file paths (untracked ones marked as
+such) plus the exact diff command for the chosen target, not just refs — and have it gather **the diff itself as its primary source**. It should open the full changed files
 from the checkout to understand the context the changed lines land in (bugs hide in how new code
 meets existing code), and may read an unchanged file only to *ground a claim about a changed line* —
 never to go looking for findings there. Do not paste large diffs or file bodies into a sub-agent
@@ -145,8 +160,8 @@ each sub-agent:
 
 - Its persona/lens section from [`references/lenses.md`](references/lenses.md) (use the persona
   statement verbatim; the matching row also lives in `agents/personas.md`).
-- The change reference (changed-file paths + base/head refs) so it can read the checkout and gather
-  the diff itself.
+- The change reference (changed-file paths + the exact diff command from step 1) so it can read the
+  checkout and gather the diff itself.
 - **The acceptance criteria from step 1b, verbatim**, plus the two-anchor scope rule from Core
   doctrine. Both go in every lens prompt — a rule that lives only in this file does not reach the
   sub-agent that needs it.

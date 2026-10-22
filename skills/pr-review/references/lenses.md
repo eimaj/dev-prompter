@@ -6,7 +6,8 @@ Tiers; this file is the choose-when table plus the per-lens prompt each sub-agen
 Each lens runs as its **own sub-agent with clean context** — the separation is the point, so a single
 mental model can't share one blind spot across every lens. Give the sub-agent its persona statement
 **verbatim** (these match the rows in `agents/personas.md`), the change reference (changed-file paths
-+ base/head refs), and the repo nav context if one was loaded.
++ the exact diff command for the target — see `SKILL.md` step 1), and the repo nav context if one was
+loaded.
 
 **Shared doctrine (all lenses):**
 
