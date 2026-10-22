@@ -5,7 +5,7 @@ Every lens sub-agent reads this file, then its own lens file in this directory (
 orchestrator picks which lenses run (`SKILL.md` step 2) and hands each one the change reference
 (changed-file paths + the exact diff command for the target), the linked issue's acceptance criteria
 verbatim (or "no linked issue"), and the repo nav context if one was loaded. Each lens persona
-statement matches its row in `agents/personas.md`.
+statement matches its `kind: lens` entry in `agents/personas.jsonl`.
 
 **Shared doctrine (all lenses):**
 

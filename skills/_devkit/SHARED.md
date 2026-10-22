@@ -9,10 +9,10 @@ Read by `/dev`, `/dev-tab`, `/dev-sa`, `/dev-sa-q`, and `/dev-tab-q` before any 
 
 ## 1. Look Up the Persona
 
-Before writing any prompt, run `~/.claude/skills/_devkit/persona find <2-4 task keywords>`. It prints up to 5 `Name<TAB>statement` rows from the Task Personas table in `~/.claude/agents/personas.md`; do not read that file directly.
+Before writing any prompt, run `~/.claude/skills/_devkit/persona find <2-4 task keywords>`. It prints up to 5 `Name<TAB>statement[<TAB>notes]` lines from the task personas in `~/.claude/agents/personas.jsonl`; do not read that file directly.
 
-- If a row matches the ask, copy its statement verbatim — do not paraphrase.
-- If none fits (exit 1, or no row matches), derive one: `You are a <role>. Your only job is <task>.` Record it with `~/.claude/skills/_devkit/persona add "<Name>" "<statement>" "<typical output>"`, which inserts the row inside the table. Leave committing to the user.
+- If a row matches the ask, copy its statement verbatim — do not paraphrase. If it has notes, follow them when assembling the prompt; never paste them into the persona line.
+- If none fits (exit 1, or no row matches), derive one: `You are a <role>. Your only job is <task>.` Record it with `~/.claude/skills/_devkit/persona add "<Name>" "<statement>" "<deliverable>"`, which appends one line. Leave committing to the user.
 
 ---
 
@@ -34,10 +34,10 @@ The tier the work runs at: `haiku` | `sonnet` | `opus`, passed as the Agent tool
 > For inline `/dev` the Model part is **informational only** — there is no dispatch, so nothing is passed to an Agent. Name the tier the work implies, then run it here in the current session.
 
 ### Part 2 — Persona
-Who the agent is and what its singular job is. Copy the statement **verbatim** from the Task Personas table (§1) — do not paraphrase.
+Who the agent is and what its singular job is. Copy the statement **verbatim** from `persona find` (§1) — do not paraphrase.
 
 ```
-You are <persona statement from Task Personas table>.
+<persona statement from persona find>
 ```
 
 ### Part 3 — Request / Ask

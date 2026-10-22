@@ -38,8 +38,8 @@ it.
 
 Every prompt these skills produce — whether it runs inline, in a subagent, or in a new
 pane — is built from four parts, in order: **model** (which tier: haiku / sonnet / opus,
-named with a one-line why), **persona** (a task persona statement, copied verbatim from
-`agents/personas.md`), **request** (the scoped ask plus all context the receiving
+named with a one-line why), **persona** (a task persona statement from
+`agents/personas.jsonl`, found with `persona find` and copied verbatim), **request** (the scoped ask plus all context the receiving
 surface needs — it has no memory of your conversation), and **deliverable** (the exact
 return format expected back).
 
@@ -84,7 +84,7 @@ and is not loaded at run time.
 
 ## Install
 
-The skills reference canonical `~/.claude/...` paths internally (e.g. the persona table
+The skills reference canonical `~/.claude/...` paths internally (e.g. the persona catalog
 lookup, the shared base), so install them there:
 
 ```bash
@@ -92,27 +92,29 @@ lookup, the shared base), so install them there:
 cp -r skills/_devkit skills/dev skills/dev-tab skills/dev-sa skills/dev-sa-q \
       skills/dev-tab-q skills/pr-review ~/.claude/skills/
 
-# Personas
-cp agents/personas.md ~/.claude/agents/personas.md
+# Personas (the script reads personas.jsonl; personas.md documents the format)
+cp agents/personas.jsonl agents/personas.md ~/.claude/agents/
 ```
 
 Symlinks work just as well if you want to keep this repo as the source of truth:
 
 ```bash
 ln -s "$(pwd)"/skills/_devkit ~/.claude/skills/_devkit
-# ...repeat per skill directory, and for agents/personas.md
+# ...repeat per skill directory, and for agents/personas.jsonl
 ```
+
+`skills/_devkit/persona_test.sh` exercises `persona find|add|lint` against a temp catalog.
 
 **Project-level alternative:** Claude Code also loads skills from a project's own
 `.claude/skills/` directory. If you'd rather scope this toolkit to one repo instead of
 installing it globally, copy the same directories into `<project>/.claude/skills/` and
-`<project>/.claude/agents/personas.md` instead. Note that in this mode you'll need to
+`<project>/.claude/agents/personas.jsonl` instead (or point `PERSONAS_FILE` at it). Note that in this mode you'll need to
 update the `~/.claude/...` path references inside the skill files to point at the
 project-local copies — they're written assuming a global install.
 
-If you already maintain a `personas.md` at `~/.claude/agents/personas.md`, merge the
-**Task Personas** table here into yours rather than overwriting — this file is
-intentionally just the reusable subset.
+If you already maintain a `~/.claude/agents/personas.jsonl`, append the lines you want from
+this one rather than overwriting — this file is intentionally just the reusable subset.
+`persona lint` catches duplicate names after a merge.
 
 ## Dependencies
 
@@ -146,14 +148,15 @@ dev-prompter/
   skills/_devkit/SHARED.md   shared core: persona lookup, 4-part contract, cycles, ask rule, logging
   skills/_devkit/dispatch.md Git-safety, Style, and Logging blocks for subagent/pane prompts
   skills/_devkit/examples.md worked examples, read on demand
-  skills/_devkit/persona     persona lookup: find / add / lint over the Task Personas table
+  skills/_devkit/persona     persona lookup: find / add / lint over agents/personas.jsonl (+ persona_test.sh)
   skills/dev/                inline surface
   skills/dev-tab/            herdr pane surface (+ herdr-tab launcher script)
   skills/dev-sa/             subagent surface, reviewed
   skills/dev-sa-q/           subagent surface, quick
   skills/dev-tab-q/          herdr pane surface, quick
   skills/pr-review/          the review step the dev family calls
-  agents/personas.md         task personas + pr-review lens personas (trimmed)
+  agents/personas.jsonl      task personas + pr-review lens personas (trimmed), one JSON object per line
+  agents/personas.md         catalog format and how to add a persona
 ```
 
 ## Credits

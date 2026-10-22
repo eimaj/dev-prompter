@@ -1,145 +1,161 @@
 #!/usr/bin/env python3
-"""persona: look up, add, and lint rows in the Task Personas table.
+"""persona: look up, add, and lint task personas in a JSONL catalog.
 
-Reads ${PERSONAS_FILE:-$HOME/.claude/agents/personas.md}.
+Reads ${PERSONAS_FILE:-$HOME/.claude/agents/personas.jsonl}: one JSON object per line with
+name, kind (task | lens | one-off), statement, deliverable, and optional notes.
 
 Usage:
-  persona find <keyword> [keyword ...]   print up to 5 matching rows as Name<TAB>statement
-  persona add <name> <statement> <typical output>
-                                          insert a row at the end of the Task Personas table
-  persona lint                            report table rows that sit outside a table
+  persona find [--all] <keyword> [keyword ...]
+      print up to 5 matches as name<TAB>statement[<TAB>notes]; task rows only unless --all
+  persona add [--kind task|lens|one-off] [--notes TEXT] <name> <statement> <deliverable>
+      append one entry (locked append; the file is never rewritten)
+  persona lint
+      validate every line
 
-find and lint never write. find exits 1 when nothing matches; lint exits 1 on findings.
+find and lint never write. find exits 1 when nothing matches; add and lint exit 1 on bad input.
 """
 
+import fcntl
+import json
 import os
 import re
 import sys
 
-SECTION = "## Task Personas"
+KINDS = ("task", "lens", "one-off")
+REQUIRED = ("name", "kind", "statement", "deliverable")
+OPTIONAL = ("notes",)
 MAX_RESULTS = 5
 STOPWORDS = {
     "a", "an", "and", "are", "for", "in", "is", "job", "of", "on", "only",
     "or", "the", "to", "with", "you", "your",
 }
-SEPARATOR = re.compile(r"^\|\s*:?-{3,}")
 
 
 def personas_path():
-    return os.environ.get("PERSONAS_FILE") or os.path.expanduser("~/.claude/agents/personas.md")
+    return os.environ.get("PERSONAS_FILE") or os.path.expanduser("~/.claude/agents/personas.jsonl")
 
 
-def read_lines(path):
+def parse(text, path):
+    """Return (entries, problems); each entry is (line_no, dict)."""
+    entries, problems = [], []
+    for n, line in enumerate(text.splitlines(), 1):
+        if not line.strip():
+            continue
+        try:
+            obj = json.loads(line)
+        except json.JSONDecodeError as e:
+            problems.append(f"{path}:{n}: invalid JSON: {e.msg}")
+            continue
+        if not isinstance(obj, dict):
+            problems.append(f"{path}:{n}: not a JSON object")
+            continue
+        entries.append((n, obj))
+    return entries, problems
+
+
+def load(path):
     try:
         with open(path, encoding="utf-8") as f:
-            return f.read().splitlines()
+            text = f.read()
     except OSError as e:
         sys.exit(f"persona: cannot read {path}: {e.strerror}")
+    return parse(text, path)
 
 
-def split_row(line):
-    cells = re.split(r"(?<!\\)\|", line.strip())
-    return [c.strip() for c in cells[1:-1]]
-
-
-def is_row(line):
-    return line.lstrip().startswith("|")
-
-
-def task_rows(lines):
-    """Return (index, cells) for each data row of the Task Personas table.
-
-    The table is the first run of contiguous '|' lines after the section heading.
-    """
-    try:
-        start = next(i for i, l in enumerate(lines) if l.strip() == SECTION)
-    except StopIteration:
-        sys.exit(f"persona: no '{SECTION}' heading in {personas_path()}")
-    rows = []
-    i = start + 1
-    while i < len(lines) and not is_row(lines[i]):
-        if lines[i].startswith("## "):
-            return rows
-        i += 1
-    while i < len(lines) and is_row(lines[i]):
-        if not SEPARATOR.match(lines[i].strip()):
-            rows.append((i, split_row(lines[i])))
-        i += 1
-    return rows[1:]  # drop the header row
+def entry_problems(obj):
+    problems = []
+    for key in REQUIRED:
+        if not isinstance(obj.get(key), str) or not obj[key].strip():
+            problems.append(f"missing or empty '{key}'")
+    for key in obj:
+        if key not in REQUIRED + OPTIONAL:
+            problems.append(f"unknown key '{key}'")
+    for key, value in obj.items():
+        if isinstance(value, str) and re.search(r"[\x00-\x1f]", value):
+            problems.append(f"control character or line break in '{key}'")
+    if obj.get("kind") not in KINDS:
+        problems.append(f"kind must be one of {', '.join(KINDS)}")
+    if "Your only job is" not in str(obj.get("statement", "")):
+        problems.append("statement must contain 'Your only job is'")
+    return problems
 
 
 def cmd_find(args):
+    show_all = "--all" in args
+    args = [a for a in args if a != "--all"]
     keywords = [k.lower() for a in args for k in re.split(r"\W+", a) if k]
     keywords = [k for k in keywords if k not in STOPWORDS and len(k) > 1]
     if not keywords:
         sys.exit("persona find: give at least one keyword")
+    entries, _ = load(personas_path())
     scored = []
-    for order, (_, cells) in enumerate(task_rows(read_lines(personas_path()))):
-        if len(cells) < 2:
+    for order, (_, obj) in enumerate(entries):
+        if not show_all and obj.get("kind") != "task":
             continue
-        name, statement = cells[0], cells[1]
-        name_l, stmt_l = name.lower(), statement.lower()
-        score = sum(2 * (k in name_l) + (k in stmt_l) for k in keywords)
+        name, statement = str(obj.get("name", "")), str(obj.get("statement", ""))
+        score = sum(2 * (k in name.lower()) + (k in statement.lower()) for k in keywords)
         if score:
-            scored.append((-score, order, name, statement))
+            scored.append((-score, order, obj))
     if not scored:
         print("persona find: no match", file=sys.stderr)
         return 1
-    for _, _, name, statement in sorted(scored)[:MAX_RESULTS]:
-        print(f"{name}\t{statement}")
+    for _, _, obj in sorted(scored, key=lambda s: s[:2])[:MAX_RESULTS]:
+        fields = [obj["name"], obj["statement"]] + ([obj["notes"]] if obj.get("notes") else [])
+        print("\t".join(fields))
     return 0
 
 
 def cmd_add(args):
-    if len(args) != 3:
-        sys.exit("persona add: need <name> <statement> <typical output>")
-    name, statement, output = (a.strip().replace("|", "\\|") for a in args)
-    if "Your only job is" not in statement:
-        sys.exit("persona add: statement must follow '[role]. Your only job is [task].'")
+    kind, notes, positional = "task", None, []
+    it = iter(args)
+    for a in it:
+        if a == "--kind":
+            kind = next(it, "")
+        elif a == "--notes":
+            notes = next(it, "")
+        else:
+            positional.append(a)
+    if len(positional) != 3:
+        sys.exit("persona add: need <name> <statement> <deliverable>")
+    obj = dict(zip(("name", "kind", "statement", "deliverable"),
+                   (positional[0].strip(), kind, positional[1].strip(), positional[2].strip())))
+    if notes is not None:
+        obj["notes"] = notes.strip()
+    problems = entry_problems(obj)
+    if problems:
+        sys.exit("persona add: " + "; ".join(problems))
     path = personas_path()
-    lines = read_lines(path)
-    rows = task_rows(lines)
-    if not rows:
-        sys.exit("persona add: Task Personas table has no rows to append after")
-    if any(c and c[0].lower() == name.lower() for _, c in rows):
-        sys.exit(f"persona add: '{name}' already exists")
-    lines.insert(rows[-1][0] + 1, f"| {name} | {statement} | {output} |")
-    with open(path, "w", encoding="utf-8") as f:
-        f.write("\n".join(lines) + "\n")
-    print(f"persona add: added '{name}' to {path}")
+    with open(path, "a+", encoding="utf-8") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        f.seek(0)
+        text = f.read()
+        entries, bad = parse(text, path)
+        if bad:
+            sys.exit("persona add: refusing to append to an invalid file; run persona lint")
+        if any(str(o.get("name", "")).lower() == obj["name"].lower() for _, o in entries):
+            sys.exit(f"persona add: '{obj['name']}' already exists")
+        prefix = "" if not text or text.endswith("\n") else "\n"
+        f.write(prefix + json.dumps(obj, ensure_ascii=False) + "\n")
+    print(f"persona add: added '{obj['name']}' ({kind}) to {path}")
     return 0
 
 
 def cmd_lint(_args):
     path = personas_path()
-    lines = read_lines(path)
-    findings = []
-    i = 0
-    while i < len(lines):
-        if not is_row(lines[i]):
-            i += 1
-            continue
-        start = i
-        while i < len(lines) and is_row(lines[i]):
-            i += 1
-        block = lines[start:i]
-        if len(block) < 2 or not SEPARATOR.match(block[1].strip()):
-            for n in range(start, i):
-                name = (split_row(lines[n]) or ["?"])[0]
-                findings.append(f"{path}:{n + 1}: row outside a table: {name}")
+    entries, findings = load(path)
     seen = {}
-    for idx, cells in task_rows(lines):
-        if len(cells) != 3:
-            findings.append(f"{path}:{idx + 1}: expected 3 columns, found {len(cells)}")
-        key = cells[0].lower() if cells else ""
+    for n, obj in entries:
+        findings += [f"{path}:{n}: {p}" for p in entry_problems(obj)]
+        key = str(obj.get("name", "")).lower()
         if key in seen:
-            findings.append(f"{path}:{idx + 1}: duplicate name '{cells[0]}' (first at line {seen[key]})")
-        seen.setdefault(key, idx + 1)
+            findings.append(f"{path}:{n}: duplicate name '{obj.get('name')}' (first at line {seen[key]})")
+        seen.setdefault(key, n)
     for f in findings:
         print(f)
     if findings:
         return 1
-    print(f"persona lint: ok ({len(task_rows(lines))} task personas)")
+    counts = ", ".join(f"{k}={sum(o.get('kind') == k for _, o in entries)}" for k in KINDS)
+    print(f"persona lint: ok ({len(entries)} personas: {counts})")
     return 0
 
 
