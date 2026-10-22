@@ -28,6 +28,8 @@ p add "log reader" "You are a log reader. Your only job is to read logs." "summa
 p add "Bad" "no job phrase here" "x" >/dev/null 2>&1 && fail "bad statement accepted"; ok "add rejects statement without job phrase"
 p add "Inject" $'You are x. Your only job is y.\n{"name": "Forged"}' "x" >/dev/null 2>&1 && fail "newline accepted"; ok "add rejects line breaks"
 p add --kind bogus "K" "You are k. Your only job is k." "x" >/dev/null 2>&1 && fail "bad kind accepted"; ok "add rejects unknown kind"
+p add "Sep" $'You are s. Your only job is s. more' "x" >/dev/null 2>&1 && fail "U+2028 accepted"; ok "add rejects unicode line separators"
+p lint >/dev/null || fail "lint after rejected adds"; ok "file still lints after rejected adds"
 grep -q Forged "$PERSONAS_FILE" && fail "forged row persisted"; ok "no forged rows"
 
 echo '{"name": "Broken"' >> "$PERSONAS_FILE"

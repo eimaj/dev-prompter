@@ -38,7 +38,9 @@ def personas_path():
 def parse(text, path):
     """Return (entries, problems); each entry is (line_no, dict)."""
     entries, problems = [], []
-    for n, line in enumerate(text.splitlines(), 1):
+    # Split on "\n" only: str.splitlines() also breaks on U+2028/U+2029/U+0085, which json.dumps
+    # leaves unescaped with ensure_ascii=False.
+    for n, line in enumerate(text.split("\n"), 1):
         if not line.strip():
             continue
         try:
@@ -71,7 +73,7 @@ def entry_problems(obj):
         if key not in REQUIRED + OPTIONAL:
             problems.append(f"unknown key '{key}'")
     for key, value in obj.items():
-        if isinstance(value, str) and re.search(r"[\x00-\x1f]", value):
+        if isinstance(value, str) and re.search("[\x00-\x1f\x85  ]", value):
             problems.append(f"control character or line break in '{key}'")
     if obj.get("kind") not in KINDS:
         problems.append(f"kind must be one of {', '.join(KINDS)}")
