@@ -102,7 +102,7 @@ herdr pane run "$NEW_PANE" "$CMD"
 # Auto-accept the bypass permissions dialog when in bypass mode.
 # Wait for the dialog to appear rather than sleeping blindly; skip cleanly if it never shows.
 if $BYPASS; then
-  if herdr wait output "$NEW_PANE" --match "Bypass Permissions" --timeout 5000 >/dev/null 2>&1; then
+  if herdr pane wait-output "$NEW_PANE" --match "Bypass Permissions" --timeout 5000 >/dev/null 2>&1; then
     herdr pane run "$NEW_PANE" "2"
   fi
 fi
