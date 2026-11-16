@@ -35,7 +35,7 @@ Draft the 4-part prompt (per SHARED.md §2 — for inline the Model part is info
 
 ## Step 3: review — `/pr-review` the change
 
-Once the change exists, run the `/pr-review` skill on the working diff — an advisory, multi-lens review (never posts, never blocks). Surface its findings; don't act on them silently. `/pr-review` needs a git diff target: when the working directory is not a git repo, skip it, say so in one line, and re-read the changed files yourself instead.
+Once the change exists, run the `/pr-review` skill on the working diff — an advisory, multi-lens review (never posts, never blocks). Surface its findings; don't act on them silently. `/pr-review` needs a git diff target: when the changed files are not inside a git work tree (`git rev-parse --is-inside-work-tree` fails in the changed files' directory), skip it, say so in one line, and re-read the changed files yourself instead.
 
 ---
 
