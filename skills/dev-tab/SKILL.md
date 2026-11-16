@@ -48,10 +48,10 @@ Draft the 4-part prompt (per SHARED.md §2) wrapped in the dispatch.md blocks, a
 
    The script splits a new herdr pane (right of current, focused) and runs `claude --verbose --dangerously-skip-permissions < <prompt-file>` (invoked directly — no reliance on the `cc` alias). It targets the current pane via `HERDR_PANE_ID` and hard-fails if `HERDR_ENV` is not `1`.
 
-   Use `--no-bypass` to skip `--dangerously-skip-permissions` (user handles permissions interactively). The auto-mode classifier denies the bypass flag ("Create Unsafe Agents"); when that happens, re-run with `--no-bypass` or fall back to `/dev`.
+   Use `--no-bypass` to skip `--dangerously-skip-permissions` (user handles permissions interactively). The auto-mode classifier denies the bypass flag ("Create Unsafe Agents"); when that happens, tell the user the bypass was denied and ask before switching: re-run with `--no-bypass` (the pane then stops at permission prompts and needs the user's interactive approvals) or fall back to `/dev`.
+   Use `--model <name>` (e.g. `--model fable`) to pin the new session's model.
 
    Open one pane per independent change; batch changes into one pane only when they depend on each other or the user asks.
-   Use `--model <name>` (e.g. `--model fable`) to pin the new session's model.
 
 3. **Log the pane reference:**
 
