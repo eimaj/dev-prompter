@@ -184,7 +184,7 @@ label every finding with its anchor — `diff` or `AC <n>` — so a strayed find
 consolidation rather than after it reaches the human.
 
 Each lens returns only lines in the format `lenses/_shared.md` defines
-(`severity | anchor | file:line | issue → consequence`), or exactly `No <lens> findings.`,
+(`severity | anchor | file:line | issue → consequence`), where `file:line` is the line in the checked-out file, not a line number from the diff output; spot-check cited lines against the file before consolidating. Or exactly `No <lens> findings.`,
 `N/A: <reason>`, or `INCOMPLETE: <what it could not read>` — never a silent empty result.
 
 ### 5. Consolidate
