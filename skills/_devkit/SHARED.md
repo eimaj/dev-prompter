@@ -1,8 +1,8 @@
 # Devkit — Shared Prompt-Gen Base
 
-Read by `/dev`, `/dev-tab`, `/dev-sa`, `/dev-sa-q`, and `/dev-tab-q` before any execution step: persona lookup, the 4-part prompt contract, the two cycles, the ask-on-real-gaps rule, and logging. Execution mechanics live in each SKILL.md.
+Read by `/dev`, `/dev-tab`, and `/dev-sa` before any execution step: persona lookup, the 4-part prompt contract, the cycle, the ask-on-real-gaps rule, and logging. Execution mechanics live in each SKILL.md.
 
-- Dispatching surfaces (`/dev-sa`, `/dev-sa-q`, `/dev-tab`, `/dev-tab-q`) also read [`dispatch.md`](dispatch.md): the Git-safety, Style, and Logging blocks every delegated prompt carries.
+- Dispatching surfaces (`/dev-sa`, `/dev-tab`) also read [`dispatch.md`](dispatch.md): the Git-safety, Style, and Logging blocks every delegated prompt carries.
 - Read [`examples.md`](examples.md) only when unsure of a prompt's shape.
 
 ---
@@ -18,7 +18,7 @@ Before writing any prompt, run `~/.claude/skills/_devkit/persona find <2-4 task 
 
 ## 2. The 4-Part Prompt Contract
 
-Every prompt — run inline (`/dev`), dispatched to a subagent (`/dev-sa`, `/dev-sa-q`), or opened in a new pane (`/dev-tab`, `/dev-tab-q`) — is built from the same four parts, in order. A prompt missing any part is not ready to run.
+Every prompt — run inline (`/dev`), dispatched to a subagent (`/dev-sa`), or opened in a new pane (`/dev-tab`) — is built from the same four parts, in order. A prompt missing any part is not ready to run.
 
 A dispatched prompt wraps the parts in fixed blocks from `dispatch.md`, in this order: [Git safety] → Persona → Request → Deliverable → [Logging] → [Style]. The Model part is not prompt text; it is the Agent `model` param or the `herdr-tab --model` flag.
 
@@ -63,25 +63,18 @@ The exact return format. Wording differs by surface:
 | Surface | Deliverable closing |
 |---|---|
 | `/dev` (inline) | _(no special closing — output appears in this session)_ |
-| `/dev-sa`, `/dev-sa-q` (subagent) | `Return only this. No intermediate output, no raw file contents unless explicitly requested.` |
-| `/dev-tab`, `/dev-tab-q` (new pane) | _(no "Return only this" — this is an interactive session)_ |
+| `/dev-sa` (subagent) | `Return only this. No intermediate output, no raw file contents unless explicitly requested.` |
+| `/dev-tab` (new pane) | _(no "Return only this" — this is an interactive session)_ |
 
 ---
 
-## 3. The Two Cycles
+## 3. The Cycle
 
-Each skill runs one of two cycles. The **write** step is the surface-specific work (inline / in-subagent / in-pane); the other steps are shared.
-
-| Family | Skills | Cycle |
-|---|---|---|
-| dev | `/dev`, `/dev-tab`, `/dev-sa` | **write → review → learn** |
-| sa (quick, `-q`) | `/dev-sa-q`, `/dev-tab-q` | **write → learn** (no review) |
+`/dev`, `/dev-tab`, and `/dev-sa` all run **write → review → learn**. The **write** step is the surface-specific work (inline / in-subagent / in-pane); the other steps are shared.
 
 - **write** — do the work on the chosen surface (inline, in the subagent, or in the new pane).
-- **review** — dispatch the `/pr-review` skill on the resulting change: an advisory, multi-lens review that never posts and never blocks. **Only the dev family reviews.** Run it once the change exists — inline for `/dev`, after the subagent returns for `/dev-sa`, in or after the pane for `/dev-tab`.
-- **learn** — `clog` a LEARNING (agent meta-feedback: a prompt gap, a corrected assumption, a reusable delegation tactic) or LESSON (a reusable concept) capturing what was surprising or worth keeping. **All five skills do this.**
-
-The `sa` family deliberately skips review: it exists to delegate a scoped task on a confirmed 4-part contract and return the result, not to gate the change through a review pass. Reach for a dev-family skill when you want the review step.
+- **review** — dispatch the `/pr-review` skill on the resulting change: an advisory, multi-lens review that never posts and never blocks. Run it once the change exists — inline for `/dev`, after the subagent returns for `/dev-sa`, in or after the pane for `/dev-tab`.
+- **learn** — `clog` a LEARNING (agent meta-feedback: a prompt gap, a corrected assumption, a reusable delegation tactic) or LESSON (a reusable concept) capturing what was surprising or worth keeping. **All three skills do this.**
 
 ---
 
@@ -93,8 +86,6 @@ If scope, deliverable, or a material unknown leaves a **real gap** that would ch
 - **Depth** — quick scan vs thorough sweep (this also drives the model tier).
 
 Otherwise, **proceed.** There is no blanket "show the assembled prompt and wait for explicit approval" gate, and no mandatory model-confirmation round — draft the 4-part prompt and go. Ask only when there is something real to resolve; if the user already answered a gap in their request, don't re-ask it.
-
-This ask-on-real-gaps rule is the one gate `/dev-sa-q` and `/dev-tab-q` keep.
 
 ---
 

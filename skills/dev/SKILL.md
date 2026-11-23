@@ -18,7 +18,7 @@ description: Run a dev task directly in the current session — small, fast, nee
 
 ## Step 1: Read SHARED.md
 
-Before doing anything else, read `~/.claude/skills/_devkit/SHARED.md`: persona lookup, the 4-part prompt contract, the two cycles, the ask-on-real-gaps rule, and logging. Skip `dispatch.md` — an inline run has no delegated context. Read `~/.claude/skills/_devkit/examples.md` only if unsure of the prompt's shape.
+Before doing anything else, read `~/.claude/skills/_devkit/SHARED.md`: persona lookup, the 4-part prompt contract, the cycle, the ask-on-real-gaps rule, and logging. Skip `dispatch.md` — an inline run has no delegated context. Read `~/.claude/skills/_devkit/examples.md` only if unsure of the prompt's shape.
 
 ---
 
