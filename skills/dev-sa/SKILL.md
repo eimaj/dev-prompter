@@ -58,6 +58,10 @@ Draft the 4-part prompt (per SHARED.md §2 — the Model part is the Agent `mode
 
    Set `run_in_background: true` only when you have independent work to do in parallel.
 
+   Brief-writing tactics:
+   - To fix every occurrence of something, name the pattern ("every measurement count"), not a list of lines; a line list left three occurrences unfixed.
+   - To review a PR ref, fetch the PR ref alone or use the `gh` `headRefOid`; `git fetch origin main pull/N/head` leaves `FETCH_HEAD` on main.
+
 4. **Present the result:** one or two sentences of framing, then the conclusion. Do not relay the subagent's full output verbatim if it is long — extract the relevant parts and summarize the rest.
 
 5. **Log completion:**
@@ -74,7 +78,9 @@ Draft the 4-part prompt (per SHARED.md §2 — the Model part is the Agent `mode
 
 ## Step 3: review — `/pr-review` the change
 
-If the subagent changed code, run the `/pr-review` skill on the change once it returns — an advisory, multi-lens review (never posts, never blocks). Surface its findings. (Pure read/research runs with no change to review skip straight to learn.)
+If the subagent changed code, run the `/pr-review` skill on the change once it returns — an advisory, multi-lens review (never posts, never blocks). Run it in this session, not inside the delegated subagent: a subagent told to invoke /pr-review ran no lens sub-agents and skipped the repo rules. If a reviewer must be delegated, the brief has to say it must run the lens sub-agents and load the named rule files, and report if it could not.
+
+Surface its findings. (Pure read/research runs with no change to review skip straight to learn.)
 
 ---
 
