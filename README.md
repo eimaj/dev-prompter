@@ -1,6 +1,6 @@
 # dev-prompter
 
-A 5-skill Claude Code toolkit for delegating dev tasks on a deliberate prompt contract.
+A 3-skill Claude Code toolkit for delegating dev tasks on a deliberate prompt contract.
 Every skill shares one base — `skills/_devkit/SHARED.md` — so persona selection, the
 prompt contract, the review/learn cycle, and logging discipline stay consistent no
 matter which surface you run on.
@@ -25,21 +25,15 @@ matter which surface you run on.
 | `/dev` | inline (current session) | write → review → learn |
 | `/dev-tab` | herdr pane (new interactive session) | write → review → learn |
 | `/dev-sa` | subagent (one-shot dispatch) | write → review → learn |
-| `/dev-sa-q` | subagent (one-shot dispatch) | write → learn (quick, no review) |
-| `/dev-tab-q` | herdr pane | write → learn (quick, no review) |
 
 - **review** means the change is passed through `/pr-review` — an advisory, multi-lens
   review (Saboteur, New Hire, Security Auditor, Test-coverage, Simplify/YAGNI) that
   never posts and never blocks.
-- **`-q`** ("quick") skips the review step entirely — use it when you want the delegated
-  result back fast and will eyeball it yourself.
-- **learn** closes every cycle: a `clog` entry (LEARNING or LESSON) capturing anything
-  surprising or reusable from the run. All five skills do this regardless of whether
-  they review.
+- **learn** closes the cycle: a `clog` entry (LEARNING or LESSON) capturing anything
+  surprising or reusable from the run.
 
 Pick the surface by how you want to interact with the work (inline vs. a separate pane
-vs. a subagent), and the cycle by whether you want the change reviewed before you trust
-it.
+vs. a subagent).
 
 ## The 4-part contract
 
@@ -50,7 +44,7 @@ named with a one-line why), **persona** (a task persona statement from
 surface needs — it has no memory of your conversation), and **deliverable** (the exact
 return format expected back).
 
-The one hard rule across all five skills: **ask, don't assume.** If scope, deliverable
+The one hard rule across all three skills: **ask, don't assume.** If scope, deliverable
 format, or depth leaves a real gap that would change the prompt, ask before proceeding —
 otherwise just draft the contract and run it. See `skills/_devkit/SHARED.md` for the
 full mechanics, `skills/_devkit/dispatch.md` for the blocks every delegated prompt
@@ -63,15 +57,12 @@ carries, and `skills/_devkit/examples.md` for worked examples.
 | Small task, fast, needs real-time iteration or back-and-forth | `/dev` |
 | Token-heavy: many file reads, grep scans, log analysis, multi-step research that would bloat parent context; want it reviewed after | `/dev-sa` |
 | Supervised / step-by-step / long-running dev work driven from a new pane | `/dev-tab` |
-| Delegate a scoped task on a deliberate 4-part contract, return the result — no review pass | `/dev-sa-q` |
-| Same deliberate contract but driven interactively from a new pane — no review pass | `/dev-tab-q` |
 | The review step for any dev-family change (advisory, multi-lens) | `/pr-review` |
 | Multi-phase (write → review → retro) with tracked artifacts | `/orchestrate` |
 
 **When in doubt:**
-- Would intermediate output clutter this session? → a subagent skill (`/dev-sa` or `/dev-sa-q`).
-- Does the user need to interact with each step? → a pane skill (`/dev-tab` or `/dev-tab-q`).
-- Should the change get an advisory review afterward? → a dev-family skill (they run `/pr-review`); otherwise the sa family.
+- Would intermediate output clutter this session? → `/dev-sa`.
+- Does the user need to interact with each step? → `/dev-tab`.
 - Is it quick and self-contained? → `/dev`.
 
 Claude Code picks a skill from its frontmatter description, so this table is for humans
@@ -79,7 +70,7 @@ and is not loaded at run time.
 
 ## Why the dispatch blocks are mandatory
 
-- **Git safety goes first.** On 2026-08-14 a `/dev-sa-q` subagent whose constraints said
+- **Git safety goes first.** On 2026-08-14 a subagent whose constraints said
   "Do NOT commit, stage, push, or branch — working tree only" committed, branched, pushed,
   opened a PR, merged it, and left the shared `~/.claude` checkout on a feature branch.
   Nothing was lost, but nobody authorised any of it. The rule was the last of eight
@@ -96,8 +87,8 @@ lookup, the shared base), so install them there:
 
 ```bash
 # Skills
-cp -r skills/_devkit skills/dev skills/dev-tab skills/dev-sa skills/dev-sa-q \
-      skills/dev-tab-q skills/pr-review ~/.claude/skills/
+cp -r skills/_devkit skills/dev skills/dev-tab skills/dev-sa \
+      skills/pr-review ~/.claude/skills/
 
 # Personas (the script reads personas.jsonl; personas.md documents the format)
 cp agents/personas.jsonl agents/personas.md ~/.claude/agents/
@@ -127,26 +118,19 @@ this one rather than overwriting — this file is intentionally just the reusabl
 
 | Dependency | Required? | Notes |
 |---|---|---|
-| [`clog`](https://github.com/eimaj/clog) | Optional | Logging CLI used for the **learn** step. All five skills call `clog` to record LEARNING/LESSON entries. If it's not installed, skip those steps — nothing else in the toolkit depends on it. |
-| `herdr` | Required only for `/dev-tab` and `/dev-tab-q` | The pane launcher these two skills use to open a new interactive Claude Code session. Requires running inside herdr (`HERDR_ENV=1`). `/dev`, `/dev-sa`, and `/dev-sa-q` have no herdr dependency. |
-| `pr-review` | Bundled | The review skill the `dev` family (`/dev`, `/dev-tab`, `/dev-sa`) calls after writing — included in full under `skills/pr-review/`. |
+| [`clog`](https://github.com/eimaj/clog) | Optional | Logging CLI used for the **learn** step. All three skills call `clog` to record LEARNING/LESSON entries. If it's not installed, skip those steps — nothing else in the toolkit depends on it. |
+| `herdr` | Required only for `/dev-tab` | The pane launcher `/dev-tab` uses to open a new interactive Claude Code session. Requires running inside herdr (`HERDR_ENV=1`). `/dev` and `/dev-sa` have no herdr dependency. |
+| `pr-review` | Bundled | The review skill all three (`/dev`, `/dev-tab`, `/dev-sa`) call after writing — included in full under `skills/pr-review/`. |
 
 ## Usage
 
-**Reviewed subagent dispatch (`/dev-sa`):**
+**Subagent dispatch (`/dev-sa`):**
 ```
 /dev-sa find all call sites of trackEverflowConversion across the mono repo
 ```
 Dispatches a subagent (persona: Codebase Explorer, model: sonnet) to do the search,
 returns the result, runs `/pr-review` if the subagent touched any files, then logs a
 LEARNING if anything was worth keeping.
-
-**Quick subagent dispatch, no review (`/dev-sa-q`):**
-```
-/dev-sa-q summarize the last 200 lines of this JSONL log into a status table
-```
-Dispatches the subagent on the same 4-part contract, returns the result, logs the learn
-step — skips `/pr-review` entirely.
 
 ## Repo layout
 
@@ -158,9 +142,7 @@ dev-prompter/
   skills/_devkit/persona     persona lookup: find / add / lint over agents/personas.jsonl (+ persona_test.sh)
   skills/dev/                inline surface
   skills/dev-tab/            herdr pane surface (+ herdr-tab launcher script)
-  skills/dev-sa/             subagent surface, reviewed
-  skills/dev-sa-q/           subagent surface, quick
-  skills/dev-tab-q/          herdr pane surface, quick
+  skills/dev-sa/             subagent surface
   skills/pr-review/          the review step the dev family calls
   agents/personas.jsonl      task personas + pr-review lens personas (trimmed), one JSON object per line
   agents/personas.md         catalog format and how to add a persona
