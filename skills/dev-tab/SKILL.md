@@ -22,7 +22,7 @@ description: Open a new interactive Claude Code session in a separate herdr pane
 
 ## Step 1: Read SHARED.md and dispatch.md
 
-Before doing anything else, read `~/.claude/skills/_devkit/SHARED.md` (persona lookup, the 4-part prompt contract, the two cycles, the ask-on-real-gaps rule, logging) and `~/.claude/skills/_devkit/dispatch.md` (the Git-safety, Style, and Logging blocks every pane prompt carries). Read `~/.claude/skills/_devkit/examples.md` only if unsure of the prompt's shape.
+Before doing anything else, read `~/.claude/skills/_devkit/SHARED.md` (persona lookup, the 4-part prompt contract, the cycle, the ask-on-real-gaps rule, logging) and `~/.claude/skills/_devkit/dispatch.md` (the Git-safety, Style, and Logging blocks every pane prompt carries). Read `~/.claude/skills/_devkit/examples.md` only if unsure of the prompt's shape.
 
 ---
 

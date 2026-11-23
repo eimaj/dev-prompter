@@ -1,6 +1,6 @@
 # Devkit — Dispatch Wrappers
 
-Read by `/dev-sa`, `/dev-sa-q`, `/dev-tab`, and `/dev-tab-q` after [`SHARED.md`](SHARED.md). Inline `/dev` has no delegated context and skips this file.
+Read by `/dev-sa` and `/dev-tab` after [`SHARED.md`](SHARED.md). Inline `/dev` has no delegated context and skips this file.
 
 Assemble every dispatched prompt (subagent or pane) in this order, copying each block verbatim:
 

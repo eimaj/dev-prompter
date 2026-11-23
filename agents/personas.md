@@ -1,7 +1,7 @@
 # Agent Personas
 
 Centralized reference for task personas used in subagent dispatch by the dev family
-(`/dev`, `/dev-tab`, `/dev-sa`, `/dev-sa-q`, `/dev-tab-q`) and by `/pr-review`.
+(`/dev`, `/dev-tab`, `/dev-sa`) and by `/pr-review`.
 
 > This file is a trimmed excerpt of a larger personal personas file. It carries only the
 > generic, reusable task personas (including the `/pr-review` lens personas), in `personas.jsonl`.

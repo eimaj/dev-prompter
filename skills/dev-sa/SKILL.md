@@ -19,7 +19,7 @@ description: Delegate the current ask to a one-shot subagent to protect the pare
 
 ## Step 1: Read SHARED.md and dispatch.md
 
-Before doing anything else, read `~/.claude/skills/_devkit/SHARED.md` (persona lookup, the 4-part prompt contract, the two cycles, the ask-on-real-gaps rule, logging) and `~/.claude/skills/_devkit/dispatch.md` (the Git-safety, Style, and Logging blocks every dispatched prompt carries). Read `~/.claude/skills/_devkit/examples.md` only if unsure of the prompt's shape.
+Before doing anything else, read `~/.claude/skills/_devkit/SHARED.md` (persona lookup, the 4-part prompt contract, the cycle, the ask-on-real-gaps rule, logging) and `~/.claude/skills/_devkit/dispatch.md` (the Git-safety, Style, and Logging blocks every dispatched prompt carries). Read `~/.claude/skills/_devkit/examples.md` only if unsure of the prompt's shape.
 
 ---
 
