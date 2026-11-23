@@ -1,6 +1,6 @@
 ---
 name: dev
-description: Run a dev task directly in the current session — small, fast, needs real-time iteration. No subagent dispatch, no new tab. Cycle — write inline, then review the change via /pr-review, then learn (clog). Asks only on real gaps.
+description: Run a dev task directly in the current session. Use when the task is small, fast, and needs real-time iteration. No subagent dispatch, no new tab. Cycle — write inline, then review the change via /pr-review, then learn (clog). Asks only on real gaps.
 ---
 
 # Dev — Inline Execution (`/dev`)
@@ -12,7 +12,6 @@ description: Run a dev task directly in the current session — small, fast, nee
 **Do NOT use when:**
 - The task would read many files, run grep scans, or produce verbose intermediate output that bloats the parent session → use `/dev-sa` instead.
 - The user wants to drive an interactive session step-by-step from a new pane → use `/dev-tab` instead.
-- The task has multiple phases (write → review → retro) → use `/orchestrate` or `/dev-orchestrate`.
 
 ---
 

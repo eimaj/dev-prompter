@@ -59,7 +59,7 @@ Pick the target from context, in priority order:
 2. **A PR is checked out** (e.g. after `pull-pr`) → diff the head against its base.
 3. **Otherwise** → review the working diff (uncommitted + committed-ahead-of-base changes).
 
-Gather the changed-file list and the diff via `git` (fetch the base first when comparing remotes).
+Gather the changed-file list and the diff via `git` (fetch the base first when comparing remotes). When fetching a PR head, take its SHA from `gh pr view <n> --json headRefOid`, not `FETCH_HEAD`: fetching two refs leaves `FETCH_HEAD` on the first one (the base).
 The command depends on the target — three-dot `<base>...<head>` compares commits only, so it cannot
 see a working diff.
 
@@ -113,7 +113,7 @@ tier, then run that tier's lenses, refined by the choose-when table below.
 
 | Tier | Trigger | Lenses run |
 |---|---|---|
-| **Skip / light** | Docs-only, config-only, generated-only, or trivial (< ~10 lines, no logic). | Quick single Saboteur skim, or `N/A` — the report says why. |
+| **Skip / light** | Docs-only, config-only, generated-only, or trivial (< ~10 lines, no logic). A spec or design change (for example an openspec change) is not docs-only: run Standard, because its feasibility flaws only surface to Saboteur and New Hire. | Quick single Saboteur skim, or `N/A` — the report says why. |
 | **Standard** | Ordinary behavior change. | Saboteur (always) + New Hire; add Test-coverage + Simplify if behavior or an abstraction changed. |
 | **Deep** | Touches auth / input handling / external calls / secrets / **any agent-facing file** (`.claude`, `.agents`, hooks, `AGENTS.md`, `CLAUDE.md`, MCP config); OR large (~50+ files → summarize by area first). | Full roster including Security Auditor (with its agent-facing sub-pass). |
 
@@ -157,8 +157,9 @@ mapping is a flat repo → global-skill lookup.
 
 Dispatch each lens the tier selected as a **separate sub-agent with clean context** (via the `Agent`
 tool). The separation is deliberate: one agent role-playing every lens shares one mental model and
-converges on the same blind spots — exactly the self-review trap this engine exists to break. Give
-each sub-agent:
+converges on the same blind spots — exactly the self-review trap this engine exists to break. Run
+this dispatch from the calling session itself: wrapping the whole review in one delegated reviewer
+(for example a single `dev-sa` agent) skipped lenses in practice. Give each sub-agent:
 
 - Its persona statement verbatim as the first line — the `Persona statement` line at the top of its
   lens file (the same text `persona find --all <lens>` prints) — then: "Read `<dir>/_shared.md` and

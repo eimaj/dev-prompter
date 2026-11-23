@@ -1,6 +1,6 @@
 ---
 name: dev-sa
-description: Delegate the current ask to a one-shot subagent to protect the parent session from token-heavy work. Use when the task involves broad file reads, grep scans, log analysis, or multi-step research. Non-orchestrated — no Writer/Reviewer cycles. Cycle — write in the subagent, then review the change via /pr-review, then learn (clog). Asks only on real gaps.
+description: Delegate the current ask to a one-shot subagent to protect the parent session from token-heavy work. Use when the task involves broad file reads, grep scans, log analysis, or multi-step research. One-shot — no Writer/Reviewer cycles. Cycle — write in the subagent, then review the change via /pr-review, then learn (clog). Asks only on real gaps.
 ---
 
 # Dev Subagent Delegation (`/dev-sa`)
@@ -13,7 +13,6 @@ description: Delegate the current ask to a one-shot subagent to protect the pare
 **Do NOT use when:**
 - The task requires real-time iteration with the user, or when the parent session must act on each step before the next can proceed → use `/dev` instead.
 - The user wants to drive an interactive step-by-step session in a new pane → use `/dev-tab` instead.
-- The task has multiple phases with tracked artifacts → use `/orchestrate` or `/dev-orchestrate`.
 
 ---
 
@@ -58,6 +57,10 @@ Draft the 4-part prompt (per SHARED.md §2 — the Model part is the Agent `mode
 
    Set `run_in_background: true` only when you have independent work to do in parallel.
 
+   Brief-writing tactics:
+   - To fix every occurrence of something, name the pattern ("every measurement count"), not a list of lines; a line list left three occurrences unfixed.
+   - To review a PR ref, fetch the PR ref alone or use the `gh` `headRefOid`; `git fetch origin main pull/N/head` leaves `FETCH_HEAD` on main.
+
 4. **Present the result:** one or two sentences of framing, then the conclusion. Do not relay the subagent's full output verbatim if it is long — extract the relevant parts and summarize the rest.
 
 5. **Log completion:**
@@ -68,13 +71,15 @@ Draft the 4-part prompt (per SHARED.md §2 — the Model part is the Agent `mode
 
    Add a `clog CODE` per file the subagent edited, or a `clog FOLLOWUP` instead on failure or timeout (SHARED.md §5).
 
-> **Routing gate:** if the ask needs multiple phases (write → review → retro), will produce tracked artifacts, or involves iterative cycles, stop here and use `/orchestrate` instead. `/dev-sa` is for one-shot delegation — if the task has layers, it's the wrong tool.
+> **Routing gate:** if the ask needs multiple phases (write → review → retro), will produce tracked artifacts, or involves iterative cycles, `/dev-sa` is the wrong tool: it is for one-shot delegation. Split the work into one-shot tasks, or run it in this session with `/dev`.
 
 ---
 
 ## Step 3: review — `/pr-review` the change
 
-If the subagent changed code, run the `/pr-review` skill on the change once it returns — an advisory, multi-lens review (never posts, never blocks). Surface its findings. (Pure read/research runs with no change to review skip straight to learn.)
+If the subagent changed code, run the `/pr-review` skill on the change once it returns — an advisory, multi-lens review (never posts, never blocks). Run it in this session, not inside the delegated subagent: a subagent told to invoke /pr-review ran no lens sub-agents and skipped the repo rules. If a reviewer must be delegated, the brief has to say it must run the lens sub-agents and load the named rule files, and report if it could not.
+
+Surface its findings. (Pure read/research runs with no change to review skip straight to learn.)
 
 ---
 
