@@ -5,12 +5,6 @@ Every skill shares one base — `skills/_devkit/SHARED.md` — so persona select
 prompt contract, the review/learn cycle, and logging discipline stay consistent no
 matter which surface you run on.
 
-> 🧰 Part of a four-repo toolkit. See [eimaj/toolkit](https://github.com/eimaj/toolkit) for how
-> the `/dev` family and `/pr-review` compose with [clog](https://github.com/eimaj/clog),
-> [orchestrate](https://github.com/eimaj/orchestrate), and
-> [project-manager](https://github.com/eimaj/project-manager) — including when to route a task
-> to `/orchestrate` instead. This repo stands alone; none of them are required.
-
 > [!IMPORTANT]
 > **This is a personal tool, written using AI.**
 > The code, tests and docs in this repo were written with the help of an AI coding assistant ([Claude Code](https://claude.com/claude-code)).
