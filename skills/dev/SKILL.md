@@ -1,6 +1,6 @@
 ---
 name: dev
-description: Run a dev task directly in the current session — small, fast, needs real-time iteration. No subagent dispatch, no new tab. Cycle — write inline, then review the change via /pr-review, then learn (clog). Asks only on real gaps.
+description: Run a dev task directly in the current session. Use when the task is small, fast, and needs real-time iteration. No subagent dispatch, no new tab. Cycle — write inline, then review the change via /pr-review, then learn (clog). Asks only on real gaps.
 ---
 
 # Dev — Inline Execution (`/dev`)
