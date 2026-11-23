@@ -16,7 +16,6 @@ description: Open a new interactive Claude Code session in a separate herdr pane
 - You need a one-shot result returned to this session → use `/dev-sa` instead.
 - The task is small and fast → use `/dev` instead.
 - The task has no natural back-and-forth (pure background work) → use the `Agent` tool directly.
-- The task needs write/review cycles with tracked artifacts → use `/orchestrate` instead.
 
 ---
 
@@ -36,7 +35,7 @@ Draft the 4-part prompt (per SHARED.md §2) wrapped in the dispatch.md blocks, a
    ~/Code/notes/reports/dev-tab/YYYY-MM-DD-<slug>.local.md
    ```
 
-   If the task is tied to an orchestrate run or specific domain, use that path instead (e.g. `~/Code/notes/reports/orchestrate/...`).
+   If the task is tied to a specific domain, use that domain's reports folder instead.
 
    Tab prompts differ from subagent prompts — **do not include** "Return only this. No intermediate output." language. This is an interactive session.
 

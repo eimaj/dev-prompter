@@ -12,7 +12,6 @@ description: Run a dev task directly in the current session. Use when the task i
 **Do NOT use when:**
 - The task would read many files, run grep scans, or produce verbose intermediate output that bloats the parent session → use `/dev-sa` instead.
 - The user wants to drive an interactive session step-by-step from a new pane → use `/dev-tab` instead.
-- The task has multiple phases (write → review → retro) → use `/orchestrate` or `/dev-orchestrate`.
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: dev-sa
-description: Delegate the current ask to a one-shot subagent to protect the parent session from token-heavy work. Use when the task involves broad file reads, grep scans, log analysis, or multi-step research. Non-orchestrated — no Writer/Reviewer cycles. Cycle — write in the subagent, then review the change via /pr-review, then learn (clog). Asks only on real gaps.
+description: Delegate the current ask to a one-shot subagent to protect the parent session from token-heavy work. Use when the task involves broad file reads, grep scans, log analysis, or multi-step research. One-shot — no Writer/Reviewer cycles. Cycle — write in the subagent, then review the change via /pr-review, then learn (clog). Asks only on real gaps.
 ---
 
 # Dev Subagent Delegation (`/dev-sa`)
@@ -13,7 +13,6 @@ description: Delegate the current ask to a one-shot subagent to protect the pare
 **Do NOT use when:**
 - The task requires real-time iteration with the user, or when the parent session must act on each step before the next can proceed → use `/dev` instead.
 - The user wants to drive an interactive step-by-step session in a new pane → use `/dev-tab` instead.
-- The task has multiple phases with tracked artifacts → use `/orchestrate` or `/dev-orchestrate`.
 
 ---
 
@@ -72,7 +71,7 @@ Draft the 4-part prompt (per SHARED.md §2 — the Model part is the Agent `mode
 
    Add a `clog CODE` per file the subagent edited, or a `clog FOLLOWUP` instead on failure or timeout (SHARED.md §5).
 
-> **Routing gate:** if the ask needs multiple phases (write → review → retro), will produce tracked artifacts, or involves iterative cycles, stop here and use `/orchestrate` instead. `/dev-sa` is for one-shot delegation — if the task has layers, it's the wrong tool.
+> **Routing gate:** if the ask needs multiple phases (write → review → retro), will produce tracked artifacts, or involves iterative cycles, `/dev-sa` is the wrong tool: it is for one-shot delegation. Split the work into one-shot tasks, or run it in this session with `/dev`.
 
 ---
 

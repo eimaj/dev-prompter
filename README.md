@@ -52,7 +52,6 @@ carries, and `skills/_devkit/examples.md` for worked examples.
 | Token-heavy: many file reads, grep scans, log analysis, multi-step research that would bloat parent context; want it reviewed after | `/dev-sa` |
 | Supervised / step-by-step / long-running dev work driven from a new pane | `/dev-tab` |
 | The review step for any dev-family change (advisory, multi-lens) | `/pr-review` |
-| Multi-phase (write → review → retro) with tracked artifacts | `/orchestrate` |
 
 **When in doubt:**
 - Would intermediate output clutter this session? → `/dev-sa`.
