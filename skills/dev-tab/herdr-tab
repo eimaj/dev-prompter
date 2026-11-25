@@ -95,7 +95,8 @@ RESULT=$(herdr pane split "$CUR_PANE" --direction "$DIRECTION" 2>&1) \
 NEW_PANE=$(echo "$RESULT" | jq -r '.result.pane.pane_id // empty')
 [[ -z "$NEW_PANE" ]] && { echo "Error: could not parse pane id from: $RESULT" >&2; exit 1; }
 
-# Build and send command
+# Build and send command. The new pane's shell (zsh or bash) parses CMD again, so every
+# interpolated value goes through printf %q.
 MODEL_ARG=""
 [[ -n "$MODEL" ]] && MODEL_ARG=" --model $(printf '%q' "$MODEL")"
 PROMPT_ARG="$(printf '%q' "$PROMPT_FILE")"
