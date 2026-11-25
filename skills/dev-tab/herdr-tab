@@ -65,24 +65,20 @@ fi
 [[ ! -f "$PROMPT_FILE" ]] && { echo "Error: prompt file not found: $PROMPT_FILE" >&2; exit 1; }
 PROMPT_FILE="$(realpath "$PROMPT_FILE")"
 
-# Resolve the pane to split from. An explicit --pane wins; otherwise herdr injects
-# HERDR_PANE_ID into every managed pane; fall back to the focused pane from `herdr pane list`.
-CUR_PANE="$TARGET_PANE"
-if [[ -z "$CUR_PANE" ]]; then
-  CUR_PANE="${HERDR_PANE_ID:-}"
+# Resolve the pane to split from. An explicit --pane wins, then HERDR_PANE_ID. Either can be
+# stale (HERDR_PANE_ID survives a session restart in a new pane), so confirm it exists in
+# `herdr pane list`; if not, fall back to the focused pane. Fail if none resolves.
+PANE_LIST=$(herdr pane list 2>/dev/null || true)
+CUR_PANE="${TARGET_PANE:-${HERDR_PANE_ID:-}}"
+if [[ -n "$CUR_PANE" ]] && ! jq -e --arg p "$CUR_PANE" \
+  'any(.. | objects | select(.pane_id? == $p); true)' <<<"$PANE_LIST" >/dev/null 2>&1; then
+  echo "Warning: pane '$CUR_PANE' not found; using the focused pane." >&2
+  CUR_PANE=""
 fi
 if [[ -z "$CUR_PANE" ]]; then
-  CUR_PANE=$(herdr pane list 2>/dev/null | jq -r 'first(.. | objects | select(.focused == true) | .pane_id) // empty')
+  CUR_PANE=$(jq -r 'first(.. | objects | select(.focused == true) | .pane_id) // empty' <<<"$PANE_LIST" 2>/dev/null || true)
 fi
-[[ -z "$CUR_PANE" ]] && { echo "Error: could not determine current herdr pane (HERDR_PANE_ID unset and no focused pane)." >&2; exit 1; }
-
-# Verify an explicitly-named pane exists, so a typo fails here instead of splitting
-# the wrong pane or erroring out with an opaque herdr message.
-if [[ -n "$TARGET_PANE" ]]; then
-  herdr pane list 2>/dev/null | jq -e --arg p "$TARGET_PANE" \
-    'any(.. | objects | select(.pane_id? == $p); true)' >/dev/null \
-    || { echo "Error: pane '$TARGET_PANE' not found. Run 'herdr pane list' to see live panes." >&2; exit 1; }
-fi
+[[ -z "$CUR_PANE" ]] && { echo "Error: could not resolve a herdr pane (target pane missing or unset, and no focused pane). Run 'herdr pane list'." >&2; exit 1; }
 
 # Open the new pane. Omitting --no-focus lands the user in the new session.
 RESULT=$(herdr pane split "$CUR_PANE" --direction "$DIRECTION" 2>&1) \

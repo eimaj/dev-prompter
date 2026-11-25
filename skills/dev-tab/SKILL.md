@@ -45,7 +45,7 @@ Draft the 4-part prompt (per SHARED.md §2) wrapped in the dispatch.md blocks, a
    ~/.claude/skills/dev-tab/herdr-tab /path/to/prompt.md
    ```
 
-   The script splits a new herdr pane (right of current, focused) and runs `claude --verbose < <prompt-file>` (invoked directly — no reliance on the `cc` alias). It targets the current pane via `HERDR_PANE_ID` and hard-fails if `HERDR_ENV` is not `1`.
+   The script splits a new herdr pane (right of current, focused) and runs `claude --verbose < <prompt-file>` (invoked directly — no reliance on the `cc` alias). It targets `--pane`, else `HERDR_PANE_ID`, falling back to the focused pane when that id is stale, and hard-fails if `HERDR_ENV` is not `1`.
 
    By default the pane stops at permission prompts for the user to approve. Pass `--bypass` to add `--dangerously-skip-permissions`; auto mode may deny it.
    Use `--model <name>` (e.g. `--model fable`) to pin the new session's model.
