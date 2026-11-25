@@ -65,15 +65,24 @@ fi
 [[ ! -f "$PROMPT_FILE" ]] && { echo "Error: prompt file not found: $PROMPT_FILE" >&2; exit 1; }
 PROMPT_FILE="$(realpath "$PROMPT_FILE")"
 
-# Resolve the pane to split from. An explicit --pane wins, then HERDR_PANE_ID. Either can be
-# stale (HERDR_PANE_ID survives a session restart in a new pane), so confirm it exists in
-# `herdr pane list`; if not, fall back to the focused pane. Fail if none resolves.
+# Resolve the pane to split from. An explicit --pane wins and must exist, so a typo fails
+# here instead of splitting the wrong pane. HERDR_PANE_ID can be stale (it survives a
+# session restart in a new pane), so when it is not in `herdr pane list`, fall back to the
+# focused pane. Fail if none resolves.
 PANE_LIST=$(herdr pane list 2>/dev/null || true)
-CUR_PANE="${TARGET_PANE:-${HERDR_PANE_ID:-}}"
-if [[ -n "$CUR_PANE" ]] && ! jq -e --arg p "$CUR_PANE" \
-  'any(.. | objects | select(.pane_id? == $p); true)' <<<"$PANE_LIST" >/dev/null 2>&1; then
-  echo "Warning: pane '$CUR_PANE' not found; using the focused pane." >&2
-  CUR_PANE=""
+pane_exists() {
+  jq -e --arg p "$1" 'any(.. | objects | select(.pane_id? == $p); true)' <<<"$PANE_LIST" >/dev/null 2>&1
+}
+if [[ -n "$TARGET_PANE" ]]; then
+  pane_exists "$TARGET_PANE" \
+    || { echo "Error: pane '$TARGET_PANE' not found. Run 'herdr pane list' to see live panes." >&2; exit 1; }
+  CUR_PANE="$TARGET_PANE"
+else
+  CUR_PANE="${HERDR_PANE_ID:-}"
+  if [[ -n "$CUR_PANE" ]] && ! pane_exists "$CUR_PANE"; then
+    echo "Warning: HERDR_PANE_ID '$CUR_PANE' not found; using the focused pane." >&2
+    CUR_PANE=""
+  fi
 fi
 if [[ -z "$CUR_PANE" ]]; then
   CUR_PANE=$(jq -r 'first(.. | objects | select(.focused == true) | .pane_id) // empty' <<<"$PANE_LIST" 2>/dev/null || true)
