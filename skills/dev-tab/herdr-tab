@@ -98,10 +98,11 @@ NEW_PANE=$(echo "$RESULT" | jq -r '.result.pane.pane_id // empty')
 # Build and send command
 MODEL_ARG=""
 [[ -n "$MODEL" ]] && MODEL_ARG=" --model $(printf '%q' "$MODEL")"
+PROMPT_ARG="$(printf '%q' "$PROMPT_FILE")"
 if $BYPASS; then
-  CMD="claude --verbose${MODEL_ARG} --dangerously-skip-permissions < \"$PROMPT_FILE\""
+  CMD="claude --verbose${MODEL_ARG} --dangerously-skip-permissions < ${PROMPT_ARG}"
 else
-  CMD="claude --verbose${MODEL_ARG} < \"$PROMPT_FILE\""
+  CMD="claude --verbose${MODEL_ARG} < ${PROMPT_ARG}"
 fi
 
 # `pane run` sends the command text and a real Enter key in one request.
