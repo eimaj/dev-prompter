@@ -32,10 +32,10 @@ Draft the 4-part prompt (per SHARED.md §2) wrapped in the dispatch.md blocks, a
 1. **Write the prompt to a file:**
 
    ```
-   ~/Code/notes/reports/dev-tab/YYYY-MM-DD-<slug>.local.md
+   ~/Code/logs/reports/dev-tab/YYYY-MM-DD-<slug>.local.md
    ```
 
-   If the task is tied to a specific domain, use that domain's reports folder instead.
+   If the task is tied to a project, use `~/Code/logs/<project>/briefs/YYYY-MM-DD-<slug>.local.md` instead.
 
    Tab prompts differ from subagent prompts — **do not include** "Return only this. No intermediate output." language. This is an interactive session.
 
