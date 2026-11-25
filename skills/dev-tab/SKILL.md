@@ -55,7 +55,7 @@ Draft the 4-part prompt (per SHARED.md §2) wrapped in the dispatch.md blocks, a
 3. **Log the pane reference:**
 
    ```bash
-   clog ACTION "dev-tab: opened cc on <pane> — <one-line task summary>" --session "$CLAUDE_SESSION_ID"
+   clog ACTION "dev-tab: opened cc on <pane> — <one-line task summary>" --session "$CLAUDE_CODE_SESSION_ID"
    ```
 
 ---
