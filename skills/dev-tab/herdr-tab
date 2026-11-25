@@ -97,7 +97,7 @@ NEW_PANE=$(echo "$RESULT" | jq -r '.result.pane.pane_id // empty')
 
 # Build and send command
 MODEL_ARG=""
-[[ -n "$MODEL" ]] && MODEL_ARG=" --model \"$MODEL\""
+[[ -n "$MODEL" ]] && MODEL_ARG=" --model $(printf '%q' "$MODEL")"
 if $BYPASS; then
   CMD="claude --verbose${MODEL_ARG} --dangerously-skip-permissions < \"$PROMPT_FILE\""
 else
