@@ -2,9 +2,11 @@
 # dev-tab: open a new herdr pane, start cc, and feed it a prompt file.
 # Requires running inside a herdr-managed pane (HERDR_ENV=1).
 # Usage:
-#   herdr-tab [--no-bypass] [--model NAME] [--pane ID] [--direction DIR] <prompt-file>
-#   echo "prompt text" | herdr-tab [--no-bypass] [--model NAME] [--pane ID] [--direction DIR]
+#   herdr-tab [--bypass] [--model NAME] [--pane ID] [--direction DIR] <prompt-file>
+#   echo "prompt text" | herdr-tab [--bypass] [--model NAME] [--pane ID] [--direction DIR]
 #
+# --bypass    start claude with --dangerously-skip-permissions (default: off)
+#             (--no-bypass is accepted as a no-op)
 # --pane      split from this pane instead of the current one (e.g. w1:p1F)
 # --direction right (default) | down | left | up
 
@@ -18,22 +20,23 @@ if [[ "${HERDR_ENV:-}" != "1" ]]; then
 fi
 
 PROMPT_FILE=""
-BYPASS=true
+BYPASS=false
 CLEANUP=false
 MODEL=""
 TARGET_PANE=""
 DIRECTION="right"
 
 usage() {
-  echo "Usage: herdr-tab [--no-bypass] [--model NAME] [--pane ID] [--direction DIR] <prompt-file>" >&2
-  echo "       echo 'prompt' | herdr-tab [--no-bypass] [--model NAME] [--pane ID] [--direction DIR]" >&2
+  echo "Usage: herdr-tab [--bypass] [--model NAME] [--pane ID] [--direction DIR] <prompt-file>" >&2
+  echo "       echo 'prompt' | herdr-tab [--bypass] [--model NAME] [--pane ID] [--direction DIR]" >&2
+  echo "       --bypass: pass --dangerously-skip-permissions (off by default; --no-bypass is a no-op)" >&2
   echo "       --direction: right (default) | down | left | up" >&2
   exit 1
 }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --no-bypass) BYPASS=false; shift ;;
+    --no-bypass) shift ;;  # no-op: kept for compatibility
     --bypass)    BYPASS=true;  shift ;;
     --model)     [[ $# -lt 2 ]] && usage; MODEL="$2"; shift 2 ;;
     --pane)      [[ $# -lt 2 ]] && usage; TARGET_PANE="$2"; shift 2 ;;
