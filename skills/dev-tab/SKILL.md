@@ -32,10 +32,10 @@ Draft the 4-part prompt (per SHARED.md §2) wrapped in the dispatch.md blocks, a
 1. **Write the prompt to a file:**
 
    ```
-   ~/Code/notes/reports/dev-tab/YYYY-MM-DD-<slug>.local.md
+   ~/Code/logs/reports/dev-tab/YYYY-MM-DD-<slug>.local.md
    ```
 
-   If the task is tied to a specific domain, use that domain's reports folder instead.
+   If the task is tied to a project, use `~/Code/logs/<project>/briefs/YYYY-MM-DD-<slug>.local.md` instead.
 
    Tab prompts differ from subagent prompts — **do not include** "Return only this. No intermediate output." language. This is an interactive session.
 
@@ -45,9 +45,9 @@ Draft the 4-part prompt (per SHARED.md §2) wrapped in the dispatch.md blocks, a
    ~/.claude/skills/dev-tab/herdr-tab /path/to/prompt.md
    ```
 
-   The script splits a new herdr pane (right of current, focused) and runs `claude --verbose --dangerously-skip-permissions < <prompt-file>` (invoked directly — no reliance on the `cc` alias). It targets the current pane via `HERDR_PANE_ID` and hard-fails if `HERDR_ENV` is not `1`.
+   The script splits a new herdr pane (right of current, focused) and runs `claude --verbose < <prompt-file>` (invoked directly — no reliance on the `cc` alias). It targets `--pane`, else `HERDR_PANE_ID`, falling back to the focused pane when that id is stale, and hard-fails if `HERDR_ENV` is not `1`.
 
-   Use `--no-bypass` to skip `--dangerously-skip-permissions` (user handles permissions interactively). In auto mode the classifier denies the bypass flag ("Create Unsafe Agents" / "Undermining Oversight"), and `--no-bypass` is accepted. Pass `--no-bypass` from the start in auto mode and tell the user the pane will stop at permission prompts needing their approval; offer `/dev` if they want no prompts.
+   By default the pane stops at permission prompts for the user to approve. Pass `--bypass` to add `--dangerously-skip-permissions`; auto mode may deny it.
    Use `--model <name>` (e.g. `--model fable`) to pin the new session's model.
 
    Open one pane per independent change; batch changes into one pane only when they depend on each other or the user asks.
@@ -55,7 +55,7 @@ Draft the 4-part prompt (per SHARED.md §2) wrapped in the dispatch.md blocks, a
 3. **Log the pane reference:**
 
    ```bash
-   clog ACTION "dev-tab: opened cc on <pane> — <one-line task summary>" --session "$CLAUDE_SESSION_ID"
+   clog ACTION "dev-tab: opened cc on <pane> — <one-line task summary>" --session "$CLAUDE_CODE_SESSION_ID"
    ```
 
 ---

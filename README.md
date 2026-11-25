@@ -112,7 +112,7 @@ this one rather than overwriting — this file is intentionally just the reusabl
 | Dependency | Required? | Notes |
 |---|---|---|
 | [`clog`](https://github.com/eimaj/clog) | Optional | Logging CLI used for the **learn** step. All three skills call `clog` to record LEARNING/LESSON entries. If it's not installed, skip those steps — nothing else in the toolkit depends on it. |
-| `herdr` | Required only for `/dev-tab` | The pane launcher `/dev-tab` uses to open a new interactive Claude Code session. Requires running inside herdr (`HERDR_ENV=1`). `/dev` and `/dev-sa` have no herdr dependency. |
+| `herdr` | Required only for `/dev-tab` | The pane launcher `/dev-tab` uses to open a new interactive Claude Code session. Requires running inside herdr (`HERDR_ENV=1`). The new session prompts for permissions by default; pass `--bypass` to `herdr-tab` to add `--dangerously-skip-permissions`. `/dev` and `/dev-sa` have no herdr dependency. |
 | `pr-review` | Bundled | The review skill all three (`/dev`, `/dev-tab`, `/dev-sa`) call after writing — included in full under `skills/pr-review/`. |
 
 ## Usage
