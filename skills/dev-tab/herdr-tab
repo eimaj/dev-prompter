@@ -95,13 +95,17 @@ RESULT=$(herdr pane split "$CUR_PANE" --direction "$DIRECTION" 2>&1) \
 NEW_PANE=$(echo "$RESULT" | jq -r '.result.pane.pane_id // empty')
 [[ -z "$NEW_PANE" ]] && { echo "Error: could not parse pane id from: $RESULT" >&2; exit 1; }
 
-# Build and send command
+# Build and send command. The new pane's shell (zsh or bash) parses CMD again, so every
+# interpolated value goes through sq: single quotes are literal in both shells, unlike
+# printf %q, whose output zsh can still glob or expand (#, =, ~).
+sq() { local q="'\\''"; printf "'%s'" "${1//\'/$q}"; }
 MODEL_ARG=""
-[[ -n "$MODEL" ]] && MODEL_ARG=" --model \"$MODEL\""
+[[ -n "$MODEL" ]] && MODEL_ARG=" --model $(sq "$MODEL")"
+PROMPT_ARG="$(sq "$PROMPT_FILE")"
 if $BYPASS; then
-  CMD="claude --verbose${MODEL_ARG} --dangerously-skip-permissions < \"$PROMPT_FILE\""
+  CMD="claude --verbose${MODEL_ARG} --dangerously-skip-permissions < ${PROMPT_ARG}"
 else
-  CMD="claude --verbose${MODEL_ARG} < \"$PROMPT_FILE\""
+  CMD="claude --verbose${MODEL_ARG} < ${PROMPT_ARG}"
 fi
 
 # `pane run` sends the command text and a real Enter key in one request.
