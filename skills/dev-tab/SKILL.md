@@ -49,6 +49,7 @@ Draft the 4-part prompt (per SHARED.md §2) wrapped in the dispatch.md blocks, a
 
    By default the pane stops at permission prompts for the user to approve. Pass `--bypass` to add `--dangerously-skip-permissions`; auto mode may deny it.
    Use `--model <name>` (e.g. `--model fable`) to pin the new session's model.
+   When this session is linked to a `/pm-start` project, the script prepends a "run `/pm-link` first" step so the new pane joins the same project; `--pm <root|slug>` names a project explicitly and `--no-pm` turns it off.
 
    Open one pane per independent change; batch changes into one pane only when they depend on each other or the user asks.
 
