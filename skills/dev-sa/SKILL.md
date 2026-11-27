@@ -37,6 +37,8 @@ Draft the 4-part prompt (per SHARED.md §2 — the Model part is the Agent `mode
 
    `subagent_type` also accepts any custom agent name matching a file in `.claude/agents/*.md` or `~/.claude/agents/*.md` — pass the agent's `name` field directly (e.g. `"subagent_type": "statusline-setup"`).
 
+   A `/pm-start` project link needs no step here: a subagent runs under this session's id, so conductor files its writes and `clog` tags under the same project. Never tell the subagent to run `/pm-link`.
+
 2. **Log the dispatch before calling Agent:**
 
    ```bash

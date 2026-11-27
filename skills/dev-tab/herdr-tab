@@ -2,13 +2,16 @@
 # dev-tab: open a new herdr pane, start cc, and feed it a prompt file.
 # Requires running inside a herdr-managed pane (HERDR_ENV=1).
 # Usage:
-#   herdr-tab [--bypass] [--model NAME] [--pane ID] [--direction DIR] <prompt-file>
-#   echo "prompt text" | herdr-tab [--bypass] [--model NAME] [--pane ID] [--direction DIR]
+#   herdr-tab [--bypass] [--model NAME] [--pane ID] [--direction DIR] [--pm ROOT|SLUG | --no-pm] <prompt-file>
+#   echo "prompt text" | herdr-tab [--bypass] [--model NAME] [--pane ID] [--direction DIR] [--pm ROOT|SLUG | --no-pm]
 #
 # --bypass    start claude with --dangerously-skip-permissions (default: off)
 #             (--no-bypass is accepted as a no-op)
 # --pane      split from this pane instead of the current one (e.g. w1:p1F)
 # --direction right (default) | down | left | up
+# --pm        have the new session /pm-link to this project (folder or slug). Without it,
+#             the calling session's link ($CONDUCTOR_HOME/links/$CLAUDE_CODE_SESSION_ID) is used.
+# --no-pm     do not link the new session to any project
 
 set -euo pipefail
 
@@ -25,12 +28,16 @@ CLEANUP=false
 MODEL=""
 TARGET_PANE=""
 DIRECTION="right"
+PM_TARGET=""
+NO_PM=false
 
 usage() {
-  echo "Usage: herdr-tab [--bypass] [--model NAME] [--pane ID] [--direction DIR] <prompt-file>" >&2
-  echo "       echo 'prompt' | herdr-tab [--bypass] [--model NAME] [--pane ID] [--direction DIR]" >&2
+  echo "Usage: herdr-tab [--bypass] [--model NAME] [--pane ID] [--direction DIR] [--pm ROOT|SLUG | --no-pm] <prompt-file>" >&2
+  echo "       echo 'prompt' | herdr-tab [--bypass] [--model NAME] [--pane ID] [--direction DIR] [--pm ROOT|SLUG | --no-pm]" >&2
   echo "       --bypass: pass --dangerously-skip-permissions (off by default; --no-bypass is a no-op)" >&2
   echo "       --direction: right (default) | down | left | up" >&2
+  echo "       --pm: link the new session to this project (default: the calling session's link)" >&2
+  echo "       --no-pm: do not link the new session to any project" >&2
   exit 1
 }
 
@@ -41,6 +48,8 @@ while [[ $# -gt 0 ]]; do
     --model)     [[ $# -lt 2 ]] && usage; MODEL="$2"; shift 2 ;;
     --pane)      [[ $# -lt 2 ]] && usage; TARGET_PANE="$2"; shift 2 ;;
     --direction) [[ $# -lt 2 ]] && usage; DIRECTION="$2"; shift 2 ;;
+    --pm)        [[ $# -lt 2 ]] && usage; PM_TARGET="$2"; shift 2 ;;
+    --no-pm)     NO_PM=true; shift ;;
     -h|--help)   usage ;;
     *)           PROMPT_FILE="$1"; shift ;;
   esac
@@ -54,7 +63,7 @@ esac
 # Fall back to stdin if no file arg
 if [[ -z "$PROMPT_FILE" ]]; then
   if [[ ! -t 0 ]]; then
-    PROMPT_FILE="$(mktemp /tmp/dev-tab-XXXXXX.md)"
+    PROMPT_FILE="$(mktemp /tmp/dev-tab-XXXXXX)"
     cat - > "$PROMPT_FILE"
     CLEANUP=true
   else
@@ -64,6 +73,35 @@ fi
 
 [[ ! -f "$PROMPT_FILE" ]] && { echo "Error: prompt file not found: $PROMPT_FILE" >&2; exit 1; }
 PROMPT_FILE="$(realpath "$PROMPT_FILE")"
+
+# Project link. The new pane is a new Claude session with its own id, so it cannot inherit
+# the caller's conductor link; prepend an instruction to run /pm-link first. An explicit
+# --pm wins; otherwise use the calling session's link file, which exists only while that
+# project is open (pm close drops it).
+if $NO_PM && [[ -n "$PM_TARGET" ]]; then
+  echo "Error: --pm and --no-pm are mutually exclusive." >&2; exit 1
+fi
+if ! $NO_PM && [[ -z "$PM_TARGET" && -n "${CLAUDE_CODE_SESSION_ID:-}" ]]; then
+  LINK_FILE="${CONDUCTOR_HOME:-$HOME/.claude/conductor}/links/$CLAUDE_CODE_SESSION_ID"
+  [[ -f "$LINK_FILE" ]] && PM_TARGET="$(head -n 1 "$LINK_FILE")"
+fi
+if [[ -n "$PM_TARGET" ]]; then
+  # A folder is passed to /pm-link as @path; anything else is treated as a slug.
+  PM_ARG="$PM_TARGET"
+  [[ -d "$PM_TARGET" ]] && PM_ARG="@$(realpath "$PM_TARGET")"
+  LINKED_FILE="$(mktemp /tmp/dev-tab-XXXXXX)"
+  {
+    echo "## Project link (do this first)"
+    echo "Before anything else, invoke the \`pm-link\` skill with the argument \`$PM_ARG\` so this session joins that open project-manager project. If it fails, say why in one line, then continue with the task below."
+    echo
+    echo "---"
+    echo
+    cat "$PROMPT_FILE"
+  } > "$LINKED_FILE"
+  $CLEANUP && rm -f "$PROMPT_FILE"
+  PROMPT_FILE="$LINKED_FILE"
+  CLEANUP=true
+fi
 
 # Resolve the pane to split from. An explicit --pane wins and must exist, so a typo fails
 # here instead of splitting the wrong pane. HERDR_PANE_ID can be stale (it survives a
@@ -121,6 +159,7 @@ fi
 
 echo "dev-tab: cc started on $NEW_PANE"
 echo "Prompt:  $PROMPT_FILE"
+[[ -n "$PM_TARGET" ]] && echo "PM link: $PM_ARG"
 
 # Clean up temp files after cc has had time to read them
 if $CLEANUP; then
